@@ -20,6 +20,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InstrumentationHelper {
 
+	// Let's have some cutoffs for large arrays where it may overflow kryonet's buffers
+	private static final int MAX_ARRAY_BYTES = 10000;
+	private static final int MAX_ARRAY_STRING_LENGTH = 1000;
+
 	private final Instrumentation instrumentation;
 
 	// Note this includes jdk + libraries as well
@@ -213,23 +217,25 @@ public class InstrumentationHelper {
 		                                                 field.getName(),
 		                                                 field.getType().getName(),
 		                                                 Modifier.fieldModifiers() & field.getModifiers());
-		if (fieldValue == null || isPrimitiveOrWrapperOrString(fieldValue) || (fieldValue.getClass().isArray()
-		                                                                       && isPrimitiveOrWrapperOrString(
-				fieldValue.getClass().getComponentType()))) {
+		if (fieldValue == null || isPrimitiveOrWrapperOrString(fieldValue)) {
 			return new ClassField(classKey, fieldValue);
 		}
-		else {
-			if (fieldValue.getClass().isArray()) {
-				return new ClassField(classKey, new WrappedObject(Arrays.deepToString((Object[]) fieldValue)));
-			}
-			else {
-				return new ClassField(classKey, new WrappedObject(fieldValue.toString()));
+		else if (fieldValue.getClass().isArray() && isPrimitiveOrWrapperOrString(fieldValue.getClass()
+		                                                                                   .getComponentType())
+		         && instrumentation.getObjectSize(fieldValue) < MAX_ARRAY_BYTES) {
+			return new ClassField(classKey, fieldValue);
+		}
+		else if (fieldValue.getClass().isArray()) {
+			final String arrayAsString = Arrays.deepToString((Object[]) fieldValue);
+			if (arrayAsString.length() < MAX_ARRAY_STRING_LENGTH) {
+				return new ClassField(classKey, new WrappedObject(arrayAsString));
 			}
 		}
+		return new ClassField(classKey, new WrappedObject(fieldValue.toString()));
 	}
 
 	private static boolean isPrimitiveOrWrapperOrString(Object object) {
-		final Class<?> type = object.getClass();
+		final Class<?> type = object instanceof Class<?> ? (Class<?>) object : object.getClass();
 		if (type == Double.class || type == Float.class || type == Long.class || type == Integer.class
 		    || type == Short.class || type == Character.class || type == Byte.class || type == Boolean.class) {
 			return true;
