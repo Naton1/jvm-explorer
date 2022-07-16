@@ -1,0 +1,21 @@
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('JetBrainsMono-Regular.ttf');
+}
+
+.lineno,
+.code-area {
+    -fx-font-family: 'JetBrains Mono';
+    -fx-font-smoothing-type: gray;
+    -fx-font-size: 13;
+}
+
+.lineno {
+    -fx-alignment: center-right;
+    -fx-text-fill: #adadad;
+    -fx-background-color: f2f2f2;
+}
+
+.paragraph-text {
+    -fx-line-spacing: 3;
+}

@@ -1,0 +1,15 @@
+.titled-pane > .content > AnchorPane,
+.titled-pane > .content > BorderPane,
+.titled-pane > .content > FlowPane,
+.titled-pane > .content > GridPane,
+.titled-pane > .content > HBox,
+.titled-pane > .content > Pane,
+.titled-pane > .content > StackPane,
+.titled-pane > .content > TilePane,
+.titled-pane > .content > VBox {
+    -fx-padding: 0.0em !important;
+}
+
+.root {
+    -fx-control-inner-background-alt: -fx-control-inner-background;
+}

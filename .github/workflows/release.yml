@@ -1,0 +1,47 @@
+name: Release
+on: workflow_dispatch
+jobs:
+  build:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.2
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3.4.1
+        with:
+          distribution: adopt
+          java-version: 11
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build
+
+      - name: Extract Version
+        id: extract_version
+        run: |
+          chmod +x gradlew
+          echo ::set-output name=version::$(./gradlew -q explorer:properties | grep ^version: | cut -d ' ' -f 2)
+
+      - name: Run Integration Tests
+        uses: GabrielBB/xvfb-action@v1.6
+        with:
+          run: |
+            chmod +x gradlew
+            ./gradlew integrationTest
+
+      - name: Run Headless Jar Health Test
+        uses: GabrielBB/xvfb-action@v1.6
+        with:
+          run: |
+            chmod +x gradlew
+            ./gradlew verifyJarStarts
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          files: explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}.jar
+          fail_on_unmatched_files: true
