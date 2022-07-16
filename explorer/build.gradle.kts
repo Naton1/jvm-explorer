@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.naton1"
-version = "0.5.2"
+version = "0.5.3"
 
 repositories {
     mavenCentral()
@@ -75,8 +75,6 @@ sourceSets {
         }
     }
     val integration by creating {
-        java.srcDir("$projectDir/src/integration/java")
-        resources.srcDir("$projectDir/src/integration/resources")
         compileClasspath += main.get().output + test.get().output
         runtimeClasspath += main.get().output + test.get().output
     }
@@ -136,10 +134,4 @@ tasks {
         testClassesDirs = sourceSets.getByName("integration").output.classesDirs
         classpath = sourceSets.getByName("integration").runtimeClasspath
     }
-}
-
-// Not sure why, but every integration resource is considered a duplicate.
-// Must be getting added twice somewhere.
-tasks.getByName("processIntegrationResources") {
-    (this as AbstractCopyTask).duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
