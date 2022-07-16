@@ -3,6 +3,7 @@ package com.github.naton1.jvmexplorer.fx.classes;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
+import com.github.naton1.jvmexplorer.helper.PatchHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ActiveClass;
 import javafx.application.Platform;
@@ -37,6 +38,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, TreeCell<PackageTreeNode>> {
+
+	private final PatchHelper patchHelper = new PatchHelper();
 
 	private final ExecutorService executorService;
 	private final AlertHelper alertHelper;
@@ -177,13 +180,29 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			});
 		});
 
+		final MenuItem replaceClasses = new MenuItem("Replace Classes");
+		replaceClasses.setOnAction(e -> {
+			final RunningJvm jvm = currentJvm.get();
+			if (jvm == null) {
+				return;
+			}
+			final FileChooser fileChooser = new FileChooser();
+			fileChooser.setTitle("Replace Classes");
+			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JAR Files", "*.jar"));
+			final File selectedFile = fileChooser.showOpenDialog(classes.getScene().getWindow());
+			if (selectedFile == null) {
+				return;
+			}
+			executorService.submit(() -> replaceClasses(selectedFile, jvm));
+		});
+
 		classesContextMenu.getItems().addAll(exportClasses, reloadClasses);
 		treeCell.itemProperty().addListener((obs, old, newv) -> {
 			classesContextMenu.getItems().clear();
 			if (newv != null && newv.getActiveClass() != null) {
 				classesContextMenu.getItems().addAll(exportClass, replaceClass, new SeparatorMenuItem());
 			}
-			classesContextMenu.getItems().addAll(exportClasses, reloadClasses);
+			classesContextMenu.getItems().addAll(exportClasses, replaceClasses, reloadClasses);
 		});
 
 		treeCell.setContextMenu(classesContextMenu);
@@ -247,6 +266,35 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			final String title = replaced ? "Replaced Class" : "Replace Failed";
 			final String header = replaced ? "Successfully replaced class" : "Class replacement failed";
 			alertHelper.show(alertType, title, header);
+		});
+	}
+
+	private void replaceClasses(File selectedFile, RunningJvm activeJvm) {
+		final SimpleIntegerProperty progress = new SimpleIntegerProperty(0);
+		final SimpleBooleanProperty isComplete = new SimpleBooleanProperty(false);
+		final SimpleBooleanProperty success = new SimpleBooleanProperty(false);
+		Platform.runLater(() -> {
+			final StringBinding titleText = Bindings.when(isComplete)
+			                                        .then("Patching Finished")
+			                                        .otherwise("Patch In Progress");
+			final StringBinding contentText = Bindings.createStringBinding(() -> {
+				if (isComplete.get()) {
+					return "Patch " + (success.get() ? "succeeded" : "failed");
+				}
+				else {
+					return "Patching: " + progress.get() + " classes";
+				}
+			}, isComplete, success, progress);
+			alertHelper.showObservableInfo(titleText, contentText);
+		});
+		final boolean result = patchHelper.patch(selectedFile,
+		                                         activeJvm,
+		                                         clientHandler,
+		                                         currentExportProgress -> Platform.runLater(() -> progress.set(
+				                                         currentExportProgress)));
+		Platform.runLater(() -> {
+			isComplete.set(true);
+			success.set(result);
 		});
 	}
 
