@@ -12,7 +12,9 @@ public class Startup {
 
 	public static void main(String[] args) {
 		final String version = Startup.class.getPackage().getImplementationVersion();
-		log.info("Starting application. Version: {}", (version == null ? "Development" : version));
+		log.info("Starting application. Application Version: {}. Java Version: {}.",
+		         (version == null ? "Development" : version),
+		         System.getProperty("java.version"));
 		AGENT_LOG_FILE.delete(); // Delete agent on log on start to prevent it growing too large
 		Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
 			log.warn("Thread uncaught exception: " + t, e);

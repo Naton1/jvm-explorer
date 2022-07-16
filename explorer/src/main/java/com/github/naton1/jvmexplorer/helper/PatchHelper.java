@@ -26,7 +26,7 @@ public class PatchHelper {
 					final byte[] classContents = jar.getInputStream(classFile).readAllBytes();
 					final boolean replaced = clientHandler.replaceClass(runningJvm, name, classContents);
 					if (!replaced) {
-						throw new IllegalStateException("Failed to replace class on jvm");
+						throw new IllegalStateException("Failed to replace class on jvm: " + name);
 					}
 				}
 				catch (IOException e) {

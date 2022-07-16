@@ -1,6 +1,6 @@
 plugins {
     java
-    id("io.freefair.lombok") version "5.2.1"
+    id("io.freefair.lombok") version "6.5.0.3"
 }
 
 group = "com.github.naton1"

@@ -3,7 +3,7 @@ import org.openjfx.gradle.JavaFXPlatform
 plugins {
     java
     id("org.openjfx.javafxplugin") version "0.0.13"
-    id("io.freefair.lombok") version "5.2.1"
+    id("io.freefair.lombok") version "6.5.0.3"
     application
 }
 
