@@ -1,0 +1,1 @@
+This module contains the agent that will attach to JVMs to inspect classes

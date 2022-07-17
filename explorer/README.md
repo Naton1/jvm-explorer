@@ -1,0 +1,1 @@
+This module contains the main entry point for the application including all user interface related logic
