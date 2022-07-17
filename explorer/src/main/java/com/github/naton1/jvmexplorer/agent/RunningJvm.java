@@ -44,7 +44,6 @@ public class RunningJvm {
 			final VirtualMachine vm = VirtualMachine.attach(id);
 			try {
 				vm.loadAgent(localPath, id + ":" + name);
-				vm.detach();
 				log.debug("Loaded agent: {}", this);
 			}
 			finally {
