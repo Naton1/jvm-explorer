@@ -7,6 +7,14 @@ import java.lang.instrument.UnmodifiableClassException;
 public class LaunchPatchAgent {
 
 	public static void premain(String agentArgs, Instrumentation instrumentation) {
+		main(agentArgs, instrumentation);
+	}
+
+	public static void agentmain(String agentArgs, Instrumentation instrumentation) {
+		main(agentArgs, instrumentation);
+	}
+
+	private static void main(String agentArgs, Instrumentation instrumentation) {
 		final ClassFileTransformer transformer = new LaunchPatchClassFileTransformer();
 		instrumentation.addTransformer(transformer, true);
 		try {

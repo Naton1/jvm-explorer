@@ -17,8 +17,8 @@ class PacketResponseHandler<T> {
 	private static final Object INTERRUPT = new Object();
 
 	private final Runnable onCleanup;
-	private final BlockingQueue<Object> linkedBlockingQueue = new LinkedBlockingQueue<>();
 	private final Consumer<Integer> onUpdateCount;
+	private final BlockingQueue<Object> linkedBlockingQueue = new LinkedBlockingQueue<>();
 
 	private volatile int receivedItemCount = 0;
 	private volatile int totalItemsSent = -1;

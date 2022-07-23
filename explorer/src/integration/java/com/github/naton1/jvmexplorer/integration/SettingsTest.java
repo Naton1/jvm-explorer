@@ -19,8 +19,27 @@ class SettingsTest {
 		jvmExplorerSettings.save(tempFile);
 		final JvmExplorerSettings loadedSettings = JvmExplorerSettings.load(tempFile);
 
-		Assertions.assertEquals(jvmExplorerSettings, loadedSettings);
+		Assertions.assertTrue(checkEqual(jvmExplorerSettings, loadedSettings));
 		tempFile.delete();
+	}
+
+	@Test
+	void givenNoSettingsExist_whenLoad_thenFreshSettingsGiven() throws IOException {
+		final File tempFile = File.createTempFile("test", "test");
+
+		final JvmExplorerSettings loadedSettings = JvmExplorerSettings.load(tempFile);
+
+		Assertions.assertNotNull(loadedSettings);
+		Assertions.assertTrue(checkEqual(new JvmExplorerSettings(), loadedSettings));
+
+		tempFile.delete();
+	}
+
+	private boolean checkEqual(JvmExplorerSettings explorerSettings, JvmExplorerSettings actualSettings) {
+		if (explorerSettings.getShowClassLoader().get() != actualSettings.getShowClassLoader().get()) {
+			return false;
+		}
+		return true;
 	}
 
 }

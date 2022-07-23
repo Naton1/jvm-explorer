@@ -119,6 +119,7 @@ tasks {
         dependsOn(test)
     }
     val verifyJarStarts by creating {
+        group = "verification"
         dependsOn(jar)
         doLast {
             val jarPath = jar.get().archiveFile.get().asFile.absolutePath
@@ -139,6 +140,7 @@ tasks {
         }
     }
     val integrationTest by creating(Test::class) {
+        group = "verification"
         useJUnitPlatform()
         testClassesDirs = sourceSets.getByName("integration").output.classesDirs
         classpath = sourceSets.getByName("integration").runtimeClasspath

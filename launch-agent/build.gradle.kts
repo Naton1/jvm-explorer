@@ -23,7 +23,8 @@ dependencies {
 tasks {
     jar {
         manifest {
-            attributes["Premain-Class"] = "com.github.naton1.jvmexplorer.agent.launch.LaunchPatchAgent"
+            attributes["Agent-Class"] = "com.github.naton1.jvmexplorer.agent.launch.LaunchPatchAgent"
+            attributes["Premain-Class"] = attributes["Agent-Class"]
             attributes["Can-Redefine-Classes"] = "true"
             attributes["Can-Retransform-Classes"] = "true"
         }
