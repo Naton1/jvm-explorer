@@ -198,9 +198,9 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			executorService.submit(() -> replaceClasses(selectedFile, jvm));
 		});
 
-		final CheckMenuItem includeClassLoader = new CheckMenuItem("Include Class Loaders");
+		final CheckMenuItem includeClassLoader = new CheckMenuItem("Show Class Loaders");
 		includeClassLoader.setOnAction(e -> {
-			settings.getShowClassLoader().set(true);
+			settings.getShowClassLoader().set(includeClassLoader.isSelected());
 			settings.save(JvmExplorerSettings.DEFAULT_SETTINGS_FILE);
 			final RunningJvm runningJvm = currentJvm.get();
 			if (runningJvm == null) {
