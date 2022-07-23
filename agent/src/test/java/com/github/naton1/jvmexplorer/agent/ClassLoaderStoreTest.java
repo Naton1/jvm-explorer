@@ -8,7 +8,6 @@ public class ClassLoaderStoreTest {
 
 	@Test
 	public void givenUnknownClassDescriptor_whenLookup_thenClassLoaderIsNull() {
-
 		final ClassLoaderStore classLoaderStore = new ClassLoaderStore();
 		final ClassLoaderDescriptor classLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                         .description("desc")

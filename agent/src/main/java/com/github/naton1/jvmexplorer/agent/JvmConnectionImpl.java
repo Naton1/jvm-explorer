@@ -30,24 +30,27 @@ public class JvmConnectionImpl implements JvmConnection {
 
 	@Override
 	public ClassContent getClassContent(LoadedClass loadedClass) {
-		final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName());
+		final ClassLoader classLoader = classLoaderStore.lookup(loadedClass.getClassLoaderDescriptor());
+		final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName(), classLoader);
 		if (klass == null) {
 			Log.warn("Failed to find class: " + loadedClass);
 			return null;
 		}
 		final byte[] classContent = instrumentationHelper.getClassBytes(klass);
 		final ClassFields classFields = instrumentationHelper.getClassFields(klass, null);
-		return new ClassContent(loadedClass.getName(), classContent, classFields);
+		return new ClassContent(loadedClass, classContent, classFields);
 	}
 
 	@Override
 	public boolean setField(ClassFieldPath classFieldPath, Object newValue) {
-		return instrumentationHelper.setObject(classFieldPath, newValue);
+		final ClassLoader classLoader = classLoaderStore.lookup(classFieldPath.getClassLoaderDescriptor());
+		return instrumentationHelper.setObject(classLoader, classFieldPath.getClassFieldKeys(), newValue);
 	}
 
 	@Override
 	public ClassFields getFields(ClassFieldPath classFieldPath) {
-		final ClassFields classFields = instrumentationHelper.getClassFields(classFieldPath);
+		final ClassLoader classLoader = classLoaderStore.lookup(classFieldPath.getClassLoaderDescriptor());
+		final ClassFields classFields = instrumentationHelper.getClassFields(classLoader, classFieldPath.getClassFieldKeys());
 		if (classFields == null) {
 			Log.warn("Failed to find fields: " + classFieldPath);
 			return new ClassFields(new ClassField[0]);
@@ -56,8 +59,9 @@ public class JvmConnectionImpl implements JvmConnection {
 	}
 
 	@Override
-	public byte[] getExportFile(String name) {
-		final Class<?> klass = instrumentationHelper.getClassByName(name);
+	public byte[] getClassBytes(LoadedClass loadedClass) {
+		final ClassLoader classLoader = classLoaderStore.lookup(loadedClass.getClassLoaderDescriptor());
+		final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName(), classLoader);
 		if (klass == null) {
 			return null;
 		}
@@ -70,8 +74,9 @@ public class JvmConnectionImpl implements JvmConnection {
 	}
 
 	@Override
-	public boolean redefineClass(String name, byte[] bytes) {
-		final Class<?> klass = instrumentationHelper.getClassByName(name);
+	public boolean redefineClass(LoadedClass loadedClass, byte[] bytes) {
+		final ClassLoader classLoader = classLoaderStore.lookup(loadedClass.getClassLoaderDescriptor());
+		final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName(), classLoader);
 		if (klass == null) {
 			return false;
 		}

@@ -6,6 +6,7 @@ import com.github.naton1.jvmexplorer.helper.ExportHelper;
 import com.github.naton1.jvmexplorer.helper.PatchHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
+import com.github.naton1.jvmexplorer.settings.JvmExplorerSettings;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -14,6 +15,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.control.Alert;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
@@ -49,6 +51,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 	private final ExportHelper exportHelper;
 	private final BooleanBinding jvmLoaded;
 	private final Consumer<RunningJvm> onLoadClasses;
+	private final JvmExplorerSettings settings;
 
 	@Override
 	public TreeCell<PackageTreeNode> call(TreeView<PackageTreeNode> classes) {
@@ -135,12 +138,11 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			if (selectedFile == null) {
 				return;
 			}
-			final List<String> roots = classesTreeRoot.streamVisible()
-			                                          .map(PackageTreeNode::getLoadedClass)
-			                                          .filter(Objects::nonNull)
-			                                          .map(LoadedClass::getName)
-			                                          .collect(Collectors.toList());
-			executorService.submit(() -> export(selectedFile, roots, activeJvm));
+			final List<LoadedClass> loadedClasses = classesTreeRoot.streamVisible()
+			                                                       .map(PackageTreeNode::getLoadedClass)
+			                                                       .filter(Objects::nonNull)
+			                                                       .collect(Collectors.toList());
+			executorService.submit(() -> export(selectedFile, loadedClasses, activeJvm));
 		});
 		final MenuItem reloadClasses = new MenuItem("Refresh Classes");
 		reloadClasses.setOnAction(e -> {
@@ -196,13 +198,34 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			executorService.submit(() -> replaceClasses(selectedFile, jvm));
 		});
 
+		final CheckMenuItem includeClassLoader = new CheckMenuItem("Include Class Loaders");
+		includeClassLoader.setOnAction(e -> {
+			settings.getShowClassLoader().set(true);
+			settings.save(JvmExplorerSettings.DEFAULT_SETTINGS_FILE);
+			final RunningJvm runningJvm = currentJvm.get();
+			if (runningJvm == null) {
+				return;
+			}
+			// Reload classes, if applicable
+			reloadClasses.getOnAction().handle(e);
+		});
+		settings.getShowClassLoader().addListener((obs, old, newv) -> {
+			includeClassLoader.setSelected(newv);
+		});
+		includeClassLoader.setSelected(settings.getShowClassLoader().getValue());
+
 		classesContextMenu.getItems().addAll(exportClasses, reloadClasses);
 		treeCell.itemProperty().addListener((obs, old, newv) -> {
 			classesContextMenu.getItems().clear();
 			if (newv != null && newv.getLoadedClass() != null) {
 				classesContextMenu.getItems().addAll(exportClass, replaceClass, new SeparatorMenuItem());
 			}
-			classesContextMenu.getItems().addAll(exportClasses, replaceClasses, reloadClasses);
+			classesContextMenu.getItems()
+			                  .addAll(exportClasses,
+			                          replaceClasses,
+			                          reloadClasses,
+			                          new SeparatorMenuItem(),
+			                          includeClassLoader);
 		});
 
 		treeCell.setContextMenu(classesContextMenu);
@@ -210,7 +233,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 
 	private void export(File selectedFile, LoadedClass loadedClass, RunningJvm activeJvm) {
 		try {
-			final byte[] classContent = clientHandler.getExportFile(activeJvm, loadedClass.getName());
+			final byte[] classContent = clientHandler.getClassBytes(activeJvm, loadedClass);
 			Files.write(selectedFile.toPath(), classContent);
 		}
 		catch (IOException ex) {
@@ -218,7 +241,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 		}
 	}
 
-	private void export(File selectedFile, List<String> classes, RunningJvm activeJvm) {
+	private void export(File selectedFile, List<LoadedClass> classes, RunningJvm activeJvm) {
 		final File exportParentFile = selectedFile.getParentFile();
 		if (exportParentFile != null) {
 			exportParentFile.mkdirs();
@@ -260,7 +283,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			log.warn("Failed to read file", ex);
 			return;
 		}
-		final boolean replaced = clientHandler.replaceClass(activeJvm, loadedClass.getName(), contents);
+		final boolean replaced = clientHandler.replaceClass(activeJvm, loadedClass, contents);
 		Platform.runLater(() -> {
 			final Alert.AlertType alertType = replaced ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR;
 			final String title = replaced ? "Replaced Class" : "Replace Failed";

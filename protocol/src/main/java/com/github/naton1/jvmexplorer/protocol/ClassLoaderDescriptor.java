@@ -7,11 +7,17 @@ import lombok.Value;
 
 @Value
 @EqualsAndHashCode(of = "id")
-@ToString(of = "description")
 @Builder
 public class ClassLoaderDescriptor {
 
 	private final String id;
 	private final String description;
+
+	private final ClassLoaderDescriptor parent;
+
+	@Override
+	public String toString() {
+		return description;
+	}
 
 }

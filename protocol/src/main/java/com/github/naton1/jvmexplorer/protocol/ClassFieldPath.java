@@ -6,5 +6,6 @@ import lombok.Value;
 public class ClassFieldPath {
 
 	private final ClassFieldKey[] classFieldKeys;
+	private final ClassLoaderDescriptor classLoaderDescriptor;
 
 }

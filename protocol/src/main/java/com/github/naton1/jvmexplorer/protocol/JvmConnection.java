@@ -9,10 +9,10 @@ public interface JvmConnection {
 
 	ClassFields getFields(ClassFieldPath classFieldPath);
 
-	byte[] getExportFile(String name);
+	byte[] getClassBytes(LoadedClass loadedClass);
 
 	void requestPackets(PacketType packetType);
 
-	boolean redefineClass(String name, byte[] bytes);
+	boolean redefineClass(LoadedClass loadedClass, byte[] bytes);
 
 }

@@ -39,10 +39,12 @@ dependencies {
     implementation("org.slf4j:slf4j-api:1.7.36")
     implementation("ch.qos.logback:logback-core:1.2.11")
     implementation("ch.qos.logback:logback-classic:1.2.11")
+
     implementation("com.esotericsoftware:kryonet:2.22.0-RC1")
     implementation("org.quiltmc:quiltflower:1.8.1")
     implementation("org.fxmisc.richtext:richtextfx:0.10.9")
     implementation("com.google.code.gson:gson:2.9.0")
+    implementation("org.hildan.fxgson:fx-gson:4.0.1")
 
     implementation("org.ow2.asm:asm:${asmVersion}")
     implementation("org.ow2.asm:asm-util:${asmVersion}")

@@ -14,6 +14,7 @@ import com.github.naton1.jvmexplorer.protocol.ClassField;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldKey;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
+import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.WrappedObject;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -115,7 +116,7 @@ public class CurrentClassController {
 		loadedClassTitlePane.textProperty().bind(Bindings.createStringBinding(() -> {
 			final ClassContent currentClassContent = currentClass.get();
 			if (currentClassContent != null) {
-				return "Class: " + currentClassContent.getName();
+				return "Class: " + currentClassContent.getLoadedClass();
 			}
 			return "Class: None";
 		}, currentClass));
@@ -159,13 +160,13 @@ public class CurrentClassController {
 				// Don't update if the class was switched again
 				if (!classContent.equals(currentClass.get())) {
 					log.debug("Class updated; not showing output for {} with processor {}",
-					          classContent.getName(),
+					          classContent.getLoadedClass(),
 					          bytecodeTextifier);
 					return;
 				}
 				if (processedClass == null || processedClass.isEmpty()) {
 					log.warn("Process result is empty for class {} with processor {}",
-					         classContent.getName(),
+					         classContent.getLoadedClass(),
 					         bytecodeTextifier);
 					codeArea.replaceText(PROCESSOR_FAILED);
 					return;
@@ -198,7 +199,8 @@ public class CurrentClassController {
 		                                                   executorService,
 		                                                   clientHandler,
 		                                                   currentJvm,
-		                                                   alertHelper));
+		                                                   alertHelper,
+		                                                   currentClass));
 
 		final Label classFieldsPlaceholder = new Label();
 		classFieldsPlaceholder.textProperty()
@@ -327,7 +329,11 @@ public class CurrentClassController {
 				if (selectedJvm == null) {
 					return;
 				}
-				final ClassFieldPath classFieldPath = treeHelper.getClassFieldPath(treeItem);
+				final ClassFieldKey[] classFieldKeys = treeHelper.getClassFieldKeyPath(treeItem);
+				final ClassLoaderDescriptor classLoaderDescriptor = currentClass.get()
+				                                                                .getLoadedClass()
+				                                                                .getClassLoaderDescriptor();
+				final ClassFieldPath classFieldPath = new ClassFieldPath(classFieldKeys, classLoaderDescriptor);
 				executorService.submit(() -> {
 					final ClassFields classFieldsResponse = clientHandler.getFields(selectedJvm, classFieldPath);
 					Platform.runLater(() -> loadChildren(treeItem, classFieldsResponse));

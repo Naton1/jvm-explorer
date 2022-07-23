@@ -8,6 +8,15 @@ import java.lang.reflect.Array;
 
 public class Protocol {
 
+	// Kryonet requires specifying the max object size that we'll send up front.
+	// This is unfortunate since we have no idea. It could definitely fail to send a class if it's extremely large.
+	// A few solutions:
+	// 1) Change everything to byte arrays and send them in chunks, then reprocess here
+	// 2) Completely remove kryonet and roll a custom client/server
+	// 3) Replace with java's RMI. Hesitant to do it because it relies on RMI being in the target JVM.
+	public static final int WRITE_BUFFER_SIZE = 1024 * 1024;
+	public static final int OBJECT_BUFFER_SIZE = 1024 * 1024;
+
 	public static final int RMI_JVM_CLIENT = 1;
 	public static final int RMI_JVM_CONNECTION = 2;
 

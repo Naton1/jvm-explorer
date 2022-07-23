@@ -81,19 +81,19 @@ public class InstrumentationHelper {
 		return transformer.getBytes() != null ? transformer.getBytes() : new byte[0];
 	}
 
-	public boolean setObject(ClassFieldPath classFieldPath, Object newValue) {
+	public boolean setObject(ClassLoader classLoader, ClassFieldKey[] classFieldKeys, Object newValue) {
 		Object currentObject = null;
 		try {
-			for (int i = 0; i < classFieldPath.getClassFieldKeys().length; i++) {
-				final ClassFieldKey classFieldKey = classFieldPath.getClassFieldKeys()[i];
-				final Class<?> currentClass = findClass(currentObject, classFieldKey);
+			for (int i = 0; i < classFieldKeys.length; i++) {
+				final ClassFieldKey classFieldKey = classFieldKeys[i];
+				final Class<?> currentClass = findClass(classLoader, currentObject, classFieldKey);
 				if (currentClass == null) {
 					Log.warn("Failed to find class for " + currentObject + " - " + classFieldKey);
 					return false;
 				}
 				final Field field = currentClass.getDeclaredField(classFieldKey.getFieldName());
 				field.setAccessible(true);
-				if (i == classFieldPath.getClassFieldKeys().length - 1) {
+				if (i == classFieldKeys.length - 1) {
 					// At the end of the path, let's set
 					// Let's support changing a final value :)
 					try {
@@ -111,21 +111,21 @@ public class InstrumentationHelper {
 				else {
 					currentObject = field.get(currentObject);
 					if (currentObject == null) {
-						Log.warn("Found null when searching path: " + classFieldPath);
+						Log.warn("Found null when searching path: " + Arrays.toString(classFieldKeys));
 						return false;
 					}
 				}
 			}
 		}
 		catch (NoSuchFieldException | IllegalAccessException e) {
-			Log.error("Failed to set object: " + classFieldPath, e);
+			Log.error("Failed to set object: " + Arrays.toString(classFieldKeys), e);
 		}
 		return false;
 	}
 
-	private Class<?> findClass(Object currentObject, ClassFieldKey classFieldKey) {
+	private Class<?> findClass(ClassLoader classLoader, Object currentObject, ClassFieldKey classFieldKey) {
 		return currentObject != null ? findClassInHierarchy(currentObject.getClass(), classFieldKey.getClassName())
-		                             : getClassByName(classFieldKey.getClassName());
+		                             : getClassByName(classFieldKey.getClassName(), classLoader);
 	}
 
 	private Class<?> findClassInHierarchy(Class<?> klass, String name) {
@@ -139,14 +139,18 @@ public class InstrumentationHelper {
 	}
 
 	public Class<?> getClassByName(String name) {
+		return getClassByName(name, null);
+	}
+
+	public Class<?> getClassByName(String name, ClassLoader classLoader) {
 		try {
-			return Class.forName(name, false, ClassLoader.getSystemClassLoader());
+			return Class.forName(name, false, classLoader != null ? classLoader : ClassLoader.getSystemClassLoader());
 		}
 		catch (ClassNotFoundException | LinkageError e) {
 			Log.debug("Couldn't find class through forName: " + e);
 		}
 		for (Class<?> klass : instrumentation.getAllLoadedClasses()) {
-			if (name.equals(klass.getName())) {
+			if (name.equals(klass.getName()) && (classLoader == null || klass.getClassLoader() == classLoader)) {
 				return klass;
 			}
 		}
@@ -154,19 +158,19 @@ public class InstrumentationHelper {
 		return null;
 	}
 
-	public ClassFields getClassFields(ClassFieldPath classFieldPath) {
-		final Object object = getObject(classFieldPath);
+	public ClassFields getClassFields(ClassLoader classLoader, ClassFieldKey[] classFieldPath) {
+		final Object object = getObject(classLoader, classFieldPath);
 		if (object == null) {
 			return null;
 		}
 		return getClassFields(object.getClass(), object);
 	}
 
-	public Object getObject(ClassFieldPath classFieldPath) {
+	public Object getObject(ClassLoader classLoader, ClassFieldKey[] classFieldPath) {
 		Object currentObject = null;
 		try {
-			for (ClassFieldKey classFieldKey : classFieldPath.getClassFieldKeys()) {
-				final Class<?> currentClass = findClass(currentObject, classFieldKey);
+			for (ClassFieldKey classFieldKey : classFieldPath) {
+				final Class<?> currentClass = findClass(classLoader, currentObject, classFieldKey);
 				if (currentClass == null) {
 					Log.warn("Failed to find class for " + currentObject + " - " + classFieldKey);
 					return null;

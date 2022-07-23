@@ -5,7 +5,7 @@ import lombok.Value;
 @Value
 public class ClassContent {
 
-	private final String name;
+	private final LoadedClass loadedClass;
 	private final byte[] classContent;
 	private final ClassFields classFields;
 

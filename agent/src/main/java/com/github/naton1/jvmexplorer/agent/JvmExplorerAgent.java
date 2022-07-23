@@ -25,7 +25,7 @@ public class JvmExplorerAgent {
 		                                           agentConfiguration.getLogLevel());
 		Log.info("Agent connected. Configuration: " + agentConfiguration);
 		try {
-			final Client client = new Client(1000000, 1000000);
+			final Client client = new Client(Protocol.WRITE_BUFFER_SIZE, Protocol.OBJECT_BUFFER_SIZE);
 			setupRmi(client, executorService, agentConfiguration.getIdentifier(), instrumentation);
 			startClient(client, agentConfiguration.getHostName(), agentConfiguration.getPort());
 			client.addListener(new CleanupListener(executorService, logger));

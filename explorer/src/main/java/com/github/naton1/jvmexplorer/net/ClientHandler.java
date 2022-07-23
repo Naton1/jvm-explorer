@@ -54,8 +54,8 @@ public class ClientHandler extends Listener {
 		return getJvmConnection(runningJvm).map(j -> j.getFields(classFieldPath)).orElse(null);
 	}
 
-	public byte[] getExportFile(RunningJvm runningJvm, String className) {
-		return getJvmConnection(runningJvm).map(j -> j.getExportFile(className)).orElse(null);
+	public byte[] getClassBytes(RunningJvm runningJvm, LoadedClass loadedClass) {
+		return getJvmConnection(runningJvm).map(j -> j.getClassBytes(loadedClass)).orElse(null);
 	}
 
 	public List<LoadedClass> getLoadedClasses(RunningJvm runningJvm, Consumer<Integer> onUpdateCount) {
@@ -69,8 +69,8 @@ public class ClientHandler extends Listener {
 		getServerTracker(runningJvm).ifPresent(Connection::close);
 	}
 
-	public boolean replaceClass(RunningJvm runningJvm, String name, byte[] bytes) {
-		return getJvmConnection(runningJvm).map(jvmConnection -> jvmConnection.redefineClass(name, bytes))
+	public boolean replaceClass(RunningJvm runningJvm, LoadedClass loadedClass, byte[] bytes) {
+		return getJvmConnection(runningJvm).map(jvmConnection -> jvmConnection.redefineClass(loadedClass, bytes))
 		                                   .orElse(false);
 	}
 

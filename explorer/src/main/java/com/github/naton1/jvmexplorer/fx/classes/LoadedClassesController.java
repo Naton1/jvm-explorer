@@ -6,12 +6,14 @@ import com.github.naton1.jvmexplorer.agent.AgentException;
 import com.github.naton1.jvmexplorer.agent.AgentPreparer;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
+import com.github.naton1.jvmexplorer.helper.ClassTreeHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
 import com.github.naton1.jvmexplorer.helper.FilterHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
-import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.AgentConfiguration;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
+import com.github.naton1.jvmexplorer.settings.JvmExplorerSettings;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -41,11 +43,13 @@ public class LoadedClassesController {
 
 	private static final String AGENT_PATH = "agents/agent.jar";
 	private static final File AGENT_LOG_FILE = new File(JvmExplorer.APP_DIR, "logs/agent.log");
+
 	static {
 		// Try to clean up on initial load. Prevents the file from growing too large.
 		AGENT_LOG_FILE.delete();
 	}
 
+	private final ClassTreeHelper classTreeHelper = new ClassTreeHelper();
 	private final AgentPreparer agentPreparer = new AgentPreparer();
 	private final FilterableTreeItem<PackageTreeNode> classesTreeRoot = new FilterableTreeItem<>();
 	private final SimpleIntegerProperty loadedClassProgressCount = new SimpleIntegerProperty(CLASSES_NOT_LOADING);
@@ -69,13 +73,14 @@ public class LoadedClassesController {
 	private ObjectProperty<RunningJvm> currentJvm;
 	private BooleanBinding jvmLoaded;
 	private int serverPort;
+	private JvmExplorerSettings settings;
 
 	public ObjectProperty<ClassContent> currentClassProperty() {
 		return currentClass;
 	}
 
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
-	                       ObjectProperty<RunningJvm> currentJvm, int serverPort) {
+	                       ObjectProperty<RunningJvm> currentJvm, int serverPort, JvmExplorerSettings settings) {
 		this.executorService = executorService;
 		this.clientHandler = clientHandler;
 		this.exportHelper = new ExportHelper(clientHandler);
@@ -83,6 +88,7 @@ public class LoadedClassesController {
 		this.currentJvm = currentJvm;
 		this.jvmLoaded = currentJvm.isNotNull().and(loadedClassProgressCount.isEqualTo(CLASSES_NOT_LOADING));
 		this.serverPort = serverPort;
+		this.settings = settings;
 		initialize();
 	}
 
@@ -163,7 +169,8 @@ public class LoadedClassesController {
 		                                            classesTreeRoot,
 		                                            exportHelper,
 		                                            jvmLoaded,
-		                                            this::loadClasses));
+		                                            this::loadClasses,
+		                                            settings));
 	}
 
 	private void setupTitlePaneText() {
@@ -264,25 +271,12 @@ public class LoadedClassesController {
 	}
 
 	private PackageTreeNode buildPackageTree(List<LoadedClass> loadedClasses) {
-		final PackageTreeNode packageTreeRoot = new PackageTreeNode(null, null);
-		for (LoadedClass loadedClass : loadedClasses) {
-			final String[] classNameParts = loadedClass.getName().split("\\.");
-			PackageTreeNode packageTree = packageTreeRoot;
-			for (int i = 0; i < classNameParts.length - 1; i++) {
-				final String classNamePart = classNameParts[i];
-				packageTree = packageTree.getChildren()
-				                         .computeIfAbsent(classNamePart, k -> new PackageTreeNode(null,
-				                                                                                  classNamePart));
-			}
-			final String simpleClassName = classNameParts[classNameParts.length - 1];
-			final PackageTreeNode previous = packageTree.getChildren()
-			                                            .put(simpleClassName,
-			                                                 new PackageTreeNode(loadedClass, simpleClassName));
-			if (previous != null && previous.getLoadedClass() != null) {
-				log.warn("Loaded duplicate class: {}", simpleClassName);
-			}
+		if (this.settings.getShowClassLoader().get()) {
+			return classTreeHelper.buildClassLoaderTree(loadedClasses);
 		}
-		return packageTreeRoot;
+		else {
+			return classTreeHelper.buildClassTree(loadedClasses);
+		}
 	}
 
 }

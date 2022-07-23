@@ -1,7 +1,6 @@
 package com.github.naton1.jvmexplorer.agent;
 
 import com.github.naton1.jvmexplorer.protocol.ClassFieldKey;
-import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
 import lombok.Value;
 import org.junit.Assert;
@@ -18,6 +17,8 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Modifier;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.List;
 
@@ -93,6 +94,39 @@ public class InstrumentationHelperTest {
 	}
 
 	@Test
+	public void testGetClassByNameWithClassLoader() {
+		final Class<?> klass = instrumentationHelper.getClassByName(InstrumentationHelperTest.class.getName(),
+		                                                            InstrumentationHelperTest.class.getClassLoader());
+		Assert.assertEquals(InstrumentationHelperTest.class, klass);
+	}
+
+	@Test
+	public void givenTwoClassesWithSameNameButDifferentClassLoader_whenGetClassByName_thenCorrectClassReturned()
+			throws ClassNotFoundException {
+		final URL location = TestStaticClass.class.getProtectionDomain().getCodeSource().getLocation();
+		final URLClassLoader urlClassLoader = new URLClassLoader(new URL[] { location }) {
+			@Override
+			protected Class<?> loadClass(String name, boolean resolve) {
+				// Force it to load a new class rather than reuse the already loaded one
+				try {
+					if (name.equals(TestStaticClass.class.getName())) {
+						return super.findClass(name);
+					}
+					return super.loadClass(name, resolve);
+				}
+				catch (ClassNotFoundException e) {
+					e.printStackTrace();
+					return null;
+				}
+			}
+		};
+		urlClassLoader.loadClass(TestStaticClass.class.getName());
+		final Class<?> klass = instrumentationHelper.getClassByName(TestStaticClass.class.getName(), urlClassLoader);
+		final Class<?> otherClassWithSameName = TestStaticClass.class;
+		Assert.assertNotEquals(klass, otherClassWithSameName);
+	}
+
+	@Test
 	public void testSetObject() {
 		final ClassFieldKey[] classFieldKeys = { new ClassFieldKey(TestStaticClass.class.getName(),
 		                                                           "instance",
@@ -102,11 +136,10 @@ public class InstrumentationHelperTest {
 		                                                           "name",
 		                                                           String.class.getName(),
 		                                                           Modifier.PRIVATE) };
-		final ClassFieldPath classFieldPath = new ClassFieldPath(classFieldKeys);
 		final String newValue = "test";
 
 		TestStaticClass.instance = new TestStaticClass("name");
-		instrumentationHelper.setObject(classFieldPath, newValue);
+		instrumentationHelper.setObject(TestStaticClass.class.getClassLoader(), classFieldKeys, newValue);
 
 		Assert.assertEquals(newValue, TestStaticClass.instance.name);
 		TestStaticClass.instance = null;
@@ -118,11 +151,11 @@ public class InstrumentationHelperTest {
 		                                                           "instance",
 		                                                           TestStaticClass.class.getName(),
 		                                                           Modifier.PUBLIC) };
-		final ClassFieldPath classFieldPath = new ClassFieldPath(classFieldKeys);
 		final String name = "test";
 
 		TestStaticClass.instance = new TestStaticClass(name);
-		final ClassFields classFields = instrumentationHelper.getClassFields(classFieldPath);
+		final ClassFields classFields = instrumentationHelper.getClassFields(TestStaticClass.class.getClassLoader(),
+		                                                                     classFieldKeys);
 		// class field 0 is the static instance, 1 is name
 		final String nameValue = (String) classFields.getFields()[1].getValue();
 
@@ -140,10 +173,10 @@ public class InstrumentationHelperTest {
 		                                                           "name",
 		                                                           String.class.getName(),
 		                                                           Modifier.PRIVATE) };
-		final ClassFieldPath classFieldPath = new ClassFieldPath(classFieldKeys);
 
 		TestStaticClass.instance = new TestStaticClass("name");
-		final String name = (String) instrumentationHelper.getObject(classFieldPath);
+		final String name = (String) instrumentationHelper.getObject(TestStaticClass.class.getClassLoader(),
+		                                                             classFieldKeys);
 
 		Assert.assertEquals(TestStaticClass.instance.name, name);
 		TestStaticClass.instance = null;

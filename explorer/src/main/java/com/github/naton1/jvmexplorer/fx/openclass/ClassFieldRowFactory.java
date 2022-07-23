@@ -5,8 +5,11 @@ import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.EditorHelper;
 import com.github.naton1.jvmexplorer.helper.TreeHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
+import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
+import com.github.naton1.jvmexplorer.protocol.ClassFieldKey;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
+import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.WrappedObject;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -32,6 +35,7 @@ public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>,
 	private final ClientHandler clientHandler;
 	private final ObjectProperty<RunningJvm> currentJvm;
 	private final AlertHelper alertHelper;
+	private final ObjectProperty<ClassContent> currentClass;
 
 	@Override
 	public TreeTableRow<ClassField> call(TreeTableView<ClassField> param) {
@@ -67,9 +71,12 @@ public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>,
 	}
 
 	private void edit(RunningJvm selectedJvm, TreeItem<ClassField> classField, String newValue) {
-		final ClassFieldPath classFieldPath = treeHelper.getClassFieldPath(classField);
+		final ClassFieldKey[] classFieldKeys = treeHelper.getClassFieldKeyPath(classField);
 		final Object resultObject = editorHelper.edit(classField.getValue().getClassFieldKey().getTypeName(),
 		                                              newValue);
+		final ClassLoaderDescriptor currentClassLoader =
+				currentClass.get().getLoadedClass().getClassLoaderDescriptor();
+		final ClassFieldPath classFieldPath = new ClassFieldPath(classFieldKeys, currentClassLoader);
 		executorService.submit(() -> {
 			if (clientHandler.setField(selectedJvm, classFieldPath, resultObject)) {
 				final ClassField updatedClassField = classField.getValue().withValue(resultObject);

@@ -12,7 +12,8 @@ import java.util.WeakHashMap;
 
 public class ClassLoaderStore {
 
-	// We need a two-way map here. One to store descriptors, and one to look back up the corresponding classloader.
+	// We need two maps here (inverses of one another).
+	// One to store descriptors, and one to look back up the corresponding classloader.
 	private final Map<ClassLoader, ClassLoaderDescriptor> classLoaderDescriptors = new WeakHashMap<>();
 	private final Map<ClassLoaderDescriptor, WeakReference<ClassLoader>> classLoaders = new HashMap<>();
 
@@ -21,9 +22,12 @@ public class ClassLoaderStore {
 		if (savedClassLoaderDescriptor != null) {
 			return savedClassLoaderDescriptor;
 		}
+		final ClassLoaderDescriptor parentDescriptor =
+				classLoader.getParent() != null ? store(classLoader.getParent()) : null;
 		final ClassLoaderDescriptor newClassLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                            .id(UUID.randomUUID().toString())
 		                                                                            .description(classLoader.toString())
+		                                                                            .parent(parentDescriptor)
 		                                                                            .build();
 		classLoaderDescriptors.put(classLoader, newClassLoaderDescriptor);
 		classLoaders.put(newClassLoaderDescriptor, new WeakReference<>(classLoader));
@@ -31,6 +35,10 @@ public class ClassLoaderStore {
 	}
 
 	public synchronized ClassLoader lookup(ClassLoaderDescriptor classLoaderDescriptor) {
+		if (classLoaderDescriptor == null) {
+			// Bootstrap classloader
+			return null;
+		}
 		final WeakReference<ClassLoader> classLoaderRef = classLoaders.get(classLoaderDescriptor);
 		if (classLoaderRef == null) {
 			return null;

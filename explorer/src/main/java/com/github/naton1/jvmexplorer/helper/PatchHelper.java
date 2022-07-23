@@ -2,6 +2,7 @@ package com.github.naton1.jvmexplorer.helper;
 
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -24,7 +25,9 @@ public class PatchHelper {
 					final String name = classFile.getName().replace('/', '.').replace(".class", "");
 					log.debug("Patching {}", name);
 					final byte[] classContents = jar.getInputStream(classFile).readAllBytes();
-					final boolean replaced = clientHandler.replaceClass(runningJvm, name, classContents);
+					// We don't know the classloader, so pass in null for it to find the first match
+					final LoadedClass loadedClass = new LoadedClass(name, null);
+					final boolean replaced = clientHandler.replaceClass(runningJvm, loadedClass, classContents);
 					if (!replaced) {
 						throw new IllegalStateException("Failed to replace class on jvm: " + name);
 					}

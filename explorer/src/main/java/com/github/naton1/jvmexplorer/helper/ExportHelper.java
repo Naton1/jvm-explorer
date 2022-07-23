@@ -2,6 +2,7 @@ package com.github.naton1.jvmexplorer.helper;
 
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import javafx.util.Pair;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +23,8 @@ public class ExportHelper {
 
 	private final ClientHandler clientHandler;
 
-	public boolean export(RunningJvm jvm, List<String> classNames, File outputJar, Consumer<Integer> currentProgress) {
-		log.debug("Exporting {} files in {} to {}", classNames.size(), jvm, outputJar);
+	public boolean export(RunningJvm jvm, List<LoadedClass> loadedClasses, File outputJar, Consumer<Integer> currentProgress) {
+		log.debug("Exporting {} files in {} to {}", loadedClasses.size(), jvm, outputJar);
 		try {
 			Files.deleteIfExists(outputJar.toPath());
 			Files.createFile(outputJar.toPath());
@@ -35,12 +36,12 @@ public class ExportHelper {
 		final AtomicInteger count = new AtomicInteger();
 		try (JarOutputStream jarOutputStream = new JarOutputStream(Files.newOutputStream(outputJar.toPath()))) {
 			// Note - parallel stream runs in common fork join pool despite these being io bound tasks
-			classNames.stream()
+			loadedClasses.stream()
 			          .parallel()
-			          .map(name -> new Pair<>(name, clientHandler.getExportFile(jvm, name)))
+			          .map(loadedClass -> new Pair<>(loadedClass, clientHandler.getClassBytes(jvm, loadedClass)))
 			          .forEach(pair -> {
 				          currentProgress.accept(count.incrementAndGet());
-				          final String name = pair.getKey().replace('.', '/') + ".class";
+				          final String name = pair.getKey().getName().replace('.', '/') + ".class";
 				          final byte[] content = pair.getValue();
 				          write(name, content, jarOutputStream);
 			          });
