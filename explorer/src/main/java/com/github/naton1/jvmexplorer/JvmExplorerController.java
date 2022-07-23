@@ -8,6 +8,8 @@ import com.github.naton1.jvmexplorer.fx.jvms.RunningJvmsController;
 import com.github.naton1.jvmexplorer.fx.openclass.CurrentClassController;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
+import com.github.naton1.jvmexplorer.net.JvmExplorerServer;
+import com.github.naton1.jvmexplorer.net.OpenPortProvider;
 import com.github.naton1.jvmexplorer.net.ServerLauncher;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import javafx.application.Platform;
@@ -25,24 +27,29 @@ import java.util.concurrent.ScheduledExecutorService;
 public class JvmExplorerController {
 
 	private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(8);
+
+	private final ClientHandler clientHandler = ClientHandler.builder()
+	                                                         .onConnect(this::onConnect)
+	                                                         .onDisconnect(this::onDisconnect)
+	                                                         .build();
+
 	@FXML
 	private RunningJvmsController runningJvmsController;
 	@FXML
 	private LoadedClassesController loadedClassesController;
 	@FXML
 	private CurrentClassController currentClassController;
+
 	private Stage stage;
 	private AlertHelper alertHelper;
-	private final ClientHandler clientHandler = ClientHandler.builder()
-	                                                         .onConnect(this::onConnect)
-	                                                         .onDisconnect(this::onDisconnect)
-	                                                         .build();
+	private JvmExplorerServer server;
 
 	public void initialize(Stage stage) {
 		this.stage = stage;
 		this.alertHelper = new AlertHelper(stage);
-		final ServerLauncher serverLauncher = new ServerLauncher();
-		final Server server = serverLauncher.launch(executorService, clientHandler);
+		final OpenPortProvider openPortProvider = new OpenPortProvider();
+		final ServerLauncher serverLauncher = new ServerLauncher(openPortProvider);
+		server = serverLauncher.launch(executorService, clientHandler);
 		stage.setOnHidden(e -> {
 			log.debug("Stage hidden, cleaning up resources");
 			try {
@@ -72,9 +79,10 @@ public class JvmExplorerController {
 	private void wireChildControllers() {
 		final ObjectProperty<RunningJvm> currentJvm = this.runningJvmsController.currentJvmProperty();
 		final ObjectProperty<ClassContent> currentClass = this.loadedClassesController.currentClassProperty();
+		final int serverPort = server.getPort();
 
 		this.runningJvmsController.initialize(stage, executorService);
-		this.loadedClassesController.initialize(stage, executorService, clientHandler, currentJvm);
+		this.loadedClassesController.initialize(stage, executorService, clientHandler, currentJvm, serverPort);
 		this.currentClassController.initialize(stage, executorService, clientHandler, currentJvm, currentClass);
 	}
 

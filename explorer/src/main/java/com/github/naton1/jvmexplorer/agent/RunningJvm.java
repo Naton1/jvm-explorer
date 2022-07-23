@@ -8,15 +8,11 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Properties;
 
 @Value
 @Slf4j
 public class RunningJvm {
-
-	private static final AgentPreparer agentPreparer = new AgentPreparer();
-	private static final String PATH = "agents/agent.jar";
 
 	private final String id;
 	private final String name;
@@ -37,20 +33,19 @@ public class RunningJvm {
 		}
 	}
 
-	public void loadAgent() throws AgentException {
+	public void loadAgent(String agentPath, String agentArgs) throws AgentException {
 		try {
-			log.debug("Attempting to load agent: {}", this);
-			final String localPath = agentPreparer.loadAgentOnFileSystem(PATH);
+			log.debug("Attempting to load agent {} with args {} into {}", agentPath, agentArgs, this);
 			final VirtualMachine vm = VirtualMachine.attach(id);
 			try {
-				vm.loadAgent(localPath, id + ":" + name);
+				vm.loadAgent(agentPath, agentArgs);
 				log.debug("Loaded agent: {}", this);
 			}
 			finally {
 				vm.detach();
 			}
 		}
-		catch (IOException | UncheckedIOException | AttachNotSupportedException | AgentLoadException | AgentInitializationException e) {
+		catch (IOException | AttachNotSupportedException | AgentLoadException | AgentInitializationException e) {
 			if (e instanceof AgentLoadException && "0".equals(e.getMessage())) {
 				log.debug("Received AgentLoadException while attaching but message is '0'.", e);
 				// See https://stackoverflow.com/questions/54340438

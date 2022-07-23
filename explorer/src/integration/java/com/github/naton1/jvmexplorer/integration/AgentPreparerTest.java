@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class AgentPreparerTest {
+class AgentPreparerTest {
 
 	@Test
-	public void testPrepareAgent() throws IOException {
+	void testPrepareAgent() throws IOException {
 		final AgentPreparer agentPreparer = new AgentPreparer();
 		final String output = agentPreparer.loadAgentOnFileSystem("agents/agent.jar");
 

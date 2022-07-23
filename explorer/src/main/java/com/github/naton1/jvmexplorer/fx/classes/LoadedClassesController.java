@@ -1,12 +1,15 @@
 package com.github.naton1.jvmexplorer.fx.classes;
 
+import com.esotericsoftware.minlog.Log;
 import com.github.naton1.jvmexplorer.agent.AgentException;
+import com.github.naton1.jvmexplorer.agent.AgentPreparer;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
 import com.github.naton1.jvmexplorer.helper.FilterHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ActiveClass;
+import com.github.naton1.jvmexplorer.protocol.AgentConfiguration;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -24,8 +27,9 @@ import javafx.scene.control.TreeView;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 
 @Slf4j
@@ -33,8 +37,11 @@ public class LoadedClassesController {
 
 	private static final int CLASSES_NOT_LOADING = -1;
 
+	private static final String AGENT_PATH = "agents/agent.jar";
+
+	private final AgentPreparer agentPreparer = new AgentPreparer();
 	private final FilterableTreeItem<PackageTreeNode> classesTreeRoot = new FilterableTreeItem<>();
-	private final SimpleIntegerProperty loadedClassCount = new SimpleIntegerProperty(CLASSES_NOT_LOADING);
+	private final SimpleIntegerProperty loadedClassProgressCount = new SimpleIntegerProperty(CLASSES_NOT_LOADING);
 	private final SimpleObjectProperty<ClassContent> currentClass = new SimpleObjectProperty<>();
 	private final FilterHelper filterHelper = new FilterHelper();
 	private final SimpleBooleanProperty agentLoading = new SimpleBooleanProperty();
@@ -48,25 +55,27 @@ public class LoadedClassesController {
 	@FXML
 	private TitledPane classesTitlePane;
 
-	private ExecutorService executorService;
+	private ScheduledExecutorService executorService;
 	private ClientHandler clientHandler;
 	private ExportHelper exportHelper;
 	private AlertHelper alertHelper;
 	private ObjectProperty<RunningJvm> currentJvm;
 	private BooleanBinding jvmLoaded;
+	private int serverPort;
 
 	public ObjectProperty<ClassContent> currentClassProperty() {
 		return currentClass;
 	}
 
-	public void initialize(Stage stage, ExecutorService executorService, ClientHandler clientHandler,
-	                       ObjectProperty<RunningJvm> currentJvm) {
+	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
+	                       ObjectProperty<RunningJvm> currentJvm, int serverPort) {
 		this.executorService = executorService;
 		this.clientHandler = clientHandler;
 		this.exportHelper = new ExportHelper(clientHandler);
 		this.alertHelper = new AlertHelper(stage);
 		this.currentJvm = currentJvm;
-		this.jvmLoaded = currentJvm.isNotNull().and(loadedClassCount.isEqualTo(CLASSES_NOT_LOADING));
+		this.jvmLoaded = currentJvm.isNotNull().and(loadedClassProgressCount.isEqualTo(CLASSES_NOT_LOADING));
+		this.serverPort = serverPort;
 		initialize();
 	}
 
@@ -95,16 +104,18 @@ public class LoadedClassesController {
 	private void setupAgentLoader() {
 		currentJvm.addListener((obs, old, newv) -> {
 			if (newv == null) {
-				loadedClassCount.set(CLASSES_NOT_LOADING);
+				loadedClassProgressCount.set(CLASSES_NOT_LOADING);
 			}
 			classesTreeRoot.getSourceChildren().clear();
 			if (newv != null) {
 				agentLoading.set(true);
 				executorService.submit(() -> {
+					final String agentArgs = buildAgentArgs(newv);
 					try {
-						newv.loadAgent();
+						final String localPath = agentPreparer.loadAgentOnFileSystem(AGENT_PATH);
+						newv.loadAgent(localPath, agentArgs);
 					}
-					catch (AgentException e) {
+					catch (AgentException | UncheckedIOException e) {
 						Platform.runLater(() -> {
 							alertHelper.showError("Agent Error", "Failed to load agent in JVM", e);
 							currentJvm.set(null);
@@ -119,6 +130,16 @@ public class LoadedClassesController {
 				executorService.submit(() -> clientHandler.close(old));
 			}
 		});
+	}
+
+	private String buildAgentArgs(RunningJvm runningJvm) {
+		return AgentConfiguration.builder()
+		                         .hostName("localhost")
+		                         .port(serverPort)
+		                         .identifier(runningJvm.getId() + ":" + runningJvm.getName())
+		                         .logLevel(Log.LEVEL_DEBUG)
+		                         .build()
+		                         .toAgentArgs();
 	}
 
 	private void setupClassesCore() {
@@ -152,7 +173,7 @@ public class LoadedClassesController {
 		placeholderLabel.textProperty()
 		                .bind(Bindings.createStringBinding(this::getPlaceholderText,
 		                                                   currentJvm,
-		                                                   loadedClassCount,
+		                                                   loadedClassProgressCount,
 		                                                   classesTreeRoot.getChildren(),
 		                                                   classesTreeRoot.getSourceChildren(),
 		                                                   searchClasses.textProperty(),
@@ -179,9 +200,7 @@ public class LoadedClassesController {
 			final ClassContent classContent = clientHandler.getClassContent(selectedJvm,
 			                                                                newv.getValue().getActiveClass());
 			if (classContent != null) {
-				Platform.runLater(() -> {
-					currentClass.set(classContent);
-				});
+				Platform.runLater(() -> currentClass.set(classContent));
 			}
 		});
 	}
@@ -201,11 +220,11 @@ public class LoadedClassesController {
 		if (currentJvm.get() == null) {
 			return "No JVM selected";
 		}
-		else if (loadedClassCount.get() != CLASSES_NOT_LOADING) {
-			if (loadedClassCount.get() == 0) {
+		else if (loadedClassProgressCount.get() != CLASSES_NOT_LOADING) {
+			if (loadedClassProgressCount.get() == 0) {
 				return "Loading - Initializing";
 			}
-			return "Loading - " + loadedClassCount.get() + " classes";
+			return "Loading - " + loadedClassProgressCount.get() + " classes";
 		}
 		else if (agentLoading.get()) {
 			return "Agent attaching to process";
@@ -219,9 +238,9 @@ public class LoadedClassesController {
 	}
 
 	private void doLoadActiveClasses(RunningJvm runningJvm) {
-		Platform.runLater(() -> loadedClassCount.set(0));
+		Platform.runLater(() -> loadedClassProgressCount.set(0));
 		final List<ActiveClass> activeClasses = clientHandler.getActiveClasses(runningJvm, loadedClassPercent -> {
-			Platform.runLater(() -> this.loadedClassCount.set(loadedClassPercent));
+			Platform.runLater(() -> this.loadedClassProgressCount.set(loadedClassPercent));
 		});
 		if (activeClasses == null) {
 			log.warn("Failed to load active classes: {}", runningJvm);
@@ -232,7 +251,7 @@ public class LoadedClassesController {
 		Platform.runLater(() -> {
 			final FilterableTreeItem<PackageTreeNode> root = packageTreeRoot.toTreeItem();
 			classesTreeRoot.getSourceChildren().setAll(root.getSourceChildren());
-			loadedClassCount.set(CLASSES_NOT_LOADING);
+			loadedClassProgressCount.set(CLASSES_NOT_LOADING);
 		});
 	}
 

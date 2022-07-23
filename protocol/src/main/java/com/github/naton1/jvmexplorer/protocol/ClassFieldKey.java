@@ -1,5 +1,6 @@
 package com.github.naton1.jvmexplorer.protocol;
 
+import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
 import lombok.Value;
 
 import java.lang.reflect.Modifier;
@@ -18,13 +19,7 @@ public class ClassFieldKey {
 	}
 
 	public String getSimpleName() {
-		if (className.contains(".")) {
-			final int startIndex = className.lastIndexOf('.') + 1;
-			if (startIndex != className.length()) {
-				return className.substring(startIndex);
-			}
-		}
-		return className;
+		return ClassNameHelper.getSimpleName(className);
 	}
 
 }

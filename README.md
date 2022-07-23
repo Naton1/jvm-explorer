@@ -51,8 +51,10 @@ Two logs files `application.log` and `agent.log` are created at `[User Home]/jvm
 * Must run the JAR with a Java version of at least Java 11
 * Must attach to a JVM running a Java version of at least Java 7
 * Must attach to a JVM running the same architecture - a 32-bit JVM must attach to a 32-bit JVM
-* The server port could be in-use for a few seconds after closing the application. Reopening the application immediately
-  after could fail to complete the startup process (could improve this to find and use an open port).
+* May have to attach to a JVM that was started by the same user
+* Must attach to a JVM that supports the Java Attach API
+
+Note: this uses the Java Attach API, so any limitations that come with that will apply here.
 
 ## Possible Enhancements
 

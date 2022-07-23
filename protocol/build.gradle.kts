@@ -15,4 +15,5 @@ repositories {
 
 dependencies {
     compileOnly("com.esotericsoftware:kryonet:2.22.0-RC1")
+    testImplementation("junit:junit:4.13")
 }

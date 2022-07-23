@@ -8,8 +8,6 @@ import java.lang.reflect.Array;
 
 public class Protocol {
 
-	public static final int PORT = 43599;
-
 	public static final int RMI_JVM_CLIENT = 1;
 	public static final int RMI_JVM_CONNECTION = 2;
 

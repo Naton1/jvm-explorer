@@ -1,5 +1,6 @@
 package com.github.naton1.jvmexplorer.protocol;
 
+import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
 import lombok.Value;
 
 @Value
@@ -8,11 +9,7 @@ public class ActiveClass implements Comparable<ActiveClass> {
 	private final String name;
 
 	public String getSimpleName() {
-		final int lastPackagePart = name.lastIndexOf('.');
-		if (lastPackagePart != -1) {
-			return name.substring(lastPackagePart + 1);
-		}
-		return name;
+		return ClassNameHelper.getSimpleName(name);
 	}
 
 	@Override

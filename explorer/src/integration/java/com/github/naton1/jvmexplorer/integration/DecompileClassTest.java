@@ -16,15 +16,15 @@ import org.testfx.framework.junit5.ApplicationExtension;
 
 @ExtendWith(ApplicationExtension.class)
 @Slf4j
-public class DecompileClassTest {
+class DecompileClassTest {
 
 	@BeforeEach
-	public void setup() throws Exception {
+	void setup() throws Exception {
 		FxToolkit.setupApplication(JvmExplorer.class);
 	}
 
 	@Test
-	public void testProcessAppears_classesLoad_classDecompiles(FxRobot fxRobot) throws Exception {
+	void testProcessAppears_classesLoad_classDecompiles(FxRobot fxRobot) throws Exception {
 		try (final TestJvm testJvm = new TestJvm()) {
 			final ListView<?> listView = fxRobot.lookup("#processes").queryListView();
 			TestHelper.waitUntil(fxRobot, () -> TestHelper.select(listView, testJvm.getMainClassName()), 5000);

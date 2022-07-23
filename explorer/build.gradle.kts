@@ -62,7 +62,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")
-
+    testImplementation("org.mockito:mockito-core:3.+")
 }
 
 sourceSets {
