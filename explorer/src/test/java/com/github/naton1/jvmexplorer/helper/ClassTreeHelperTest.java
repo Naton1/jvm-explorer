@@ -17,11 +17,13 @@ class ClassTreeHelperTest {
 		final ClassLoaderDescriptor parentClassLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                               .description("test1")
 		                                                                               .id("1")
+		                                                                               .simpleClassName("ClassLoader")
 		                                                                               .parent(null)
 		                                                                               .build();
 		final ClassLoaderDescriptor classLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                         .description("test2")
 		                                                                         .id("2")
+		                                                                         .simpleClassName("ClassLoader")
 		                                                                         .parent(parentClassLoaderDescriptor)
 		                                                                         .build();
 		final LoadedClass loadedClass = new LoadedClass("test.TestClass", classLoaderDescriptor);
@@ -38,7 +40,8 @@ class ClassTreeHelperTest {
 
 		final PackageTreeNode root = classTreeHelper.buildClassLoaderTree(List.of(loadedClass, otherClass, rootClass));
 
-		Assertions.assertEquals(expectedRoot, root,
+		Assertions.assertEquals(expectedRoot,
+		                        root,
 		                        toDetailedString(expectedRoot, 0) + "\n!=\n" + toDetailedString(root, 0) + "\n");
 	}
 
@@ -48,11 +51,13 @@ class ClassTreeHelperTest {
 		final ClassLoaderDescriptor parentClassLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                               .description("test1")
 		                                                                               .id("1")
+		                                                                               .simpleClassName("ClassLoader")
 		                                                                               .parent(null)
 		                                                                               .build();
 		final ClassLoaderDescriptor classLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                         .description("test2")
 		                                                                         .id("2")
+		                                                                         .simpleClassName("ClassLoader")
 		                                                                         .parent(parentClassLoaderDescriptor)
 		                                                                         .build();
 		final LoadedClass loadedClass = new LoadedClass("test.TestClass", classLoaderDescriptor);
@@ -67,7 +72,8 @@ class ClassTreeHelperTest {
 
 		final PackageTreeNode root = classTreeHelper.buildClassTree(List.of(loadedClass, otherClass, rootClass));
 
-		Assertions.assertEquals(expectedRoot, root,
+		Assertions.assertEquals(expectedRoot,
+		                        root,
 		                        toDetailedString(expectedRoot, 0) + "\n!=\n" + toDetailedString(root, 0) + "\n");
 	}
 

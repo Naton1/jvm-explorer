@@ -103,7 +103,7 @@ public class PackageTreeNode implements Comparable<PackageTreeNode> {
 	}
 
 	private static PackageTreeNode ofClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
-		return new PackageTreeNode(null, classLoaderDescriptor.getDescription(), classLoaderDescriptor);
+		return new PackageTreeNode(null, classLoaderDescriptor.getSimpleClassName(), classLoaderDescriptor);
 	}
 
 	private String getKeyForClass(LoadedClass loadedClass) {

@@ -108,8 +108,8 @@ public class CurrentClassController {
 
 		setupClassFieldTree();
 
-		setupCodeArea(bytecode);
 		setupCodeArea(classFile);
+		setupCodeArea(bytecode);
 	}
 
 	private void setupTitlePaneText() {
@@ -173,6 +173,8 @@ public class CurrentClassController {
 					return;
 				}
 				codeArea.replaceText(processedClass);
+				// sometimes the text area wasn't scrolling to 0 by default, so let's tell it to no matter what
+				codeArea.scrollYToPixel(0);
 				// Trigger update immediately
 				final Task<StyleSpans<Collection<String>>> initialTask = computeHighlighting(codeArea);
 				initialTask.setOnSucceeded(e -> applyHighlighting(codeArea, initialTask.getValue()));
@@ -270,7 +272,7 @@ public class CurrentClassController {
 		// Hack to insert the scroll pane. SceneBuilder wasn't picking it up.
 		final VBox parent = (VBox) codeArea.getParent();
 		parent.getChildren().remove(codeArea);
-		final Node scrollPane = new VirtualizedScrollPane<CodeArea>(codeArea);
+		final Node scrollPane = new VirtualizedScrollPane<>(codeArea);
 		parent.getChildren().add(scrollPane);
 		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 		codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));

@@ -11,6 +11,8 @@ import lombok.Value;
 public class ClassLoaderDescriptor {
 
 	private final String id;
+
+	private final String simpleClassName;
 	private final String description;
 
 	private final ClassLoaderDescriptor parent;

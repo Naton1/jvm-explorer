@@ -2,7 +2,7 @@
 
 JVM Explorer is a Java desktop application for browsing loaded class files inside locally running Java Virtual Machines.
 
-<img src="resources/readme-screenshot.png" alt="JVM Explorer Screenshot" />
+<img src="assets/readme-screenshot.png" alt="JVM Explorer Screenshot" />
 
 [![Build](https://github.com/Naton1/jvm-explorer/actions/workflows/build.yml/badge.svg)](https://github.com/Naton1/jvm-explorer/actions/workflows/build.yml)
 

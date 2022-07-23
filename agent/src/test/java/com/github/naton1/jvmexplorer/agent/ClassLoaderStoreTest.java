@@ -12,6 +12,7 @@ public class ClassLoaderStoreTest {
 		final ClassLoaderDescriptor classLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                         .description("desc")
 		                                                                         .id("id")
+		                                                                         .simpleClassName("ClassLoader")
 		                                                                         .build();
 
 		final ClassLoader correspondingClassLoader = classLoaderStore.lookup(classLoaderDescriptor);

@@ -27,6 +27,8 @@ public class ClassLoaderStore {
 		final ClassLoaderDescriptor newClassLoaderDescriptor = ClassLoaderDescriptor.builder()
 		                                                                            .id(UUID.randomUUID().toString())
 		                                                                            .description(classLoader.toString())
+		                                                                            .simpleClassName(classLoader.getClass()
+		                                                                                                        .getSimpleName())
 		                                                                            .parent(parentDescriptor)
 		                                                                            .build();
 		classLoaderDescriptors.put(classLoader, newClassLoaderDescriptor);

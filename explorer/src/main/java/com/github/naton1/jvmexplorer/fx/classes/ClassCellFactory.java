@@ -87,15 +87,20 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			if (packageTreeNode == null) {
 				return "";
 			}
-			return String.valueOf(packageTreeNode.getLoadedClass());
-		}, treeCell.itemProperty()));
-		treeCell.tooltipProperty().bind(Bindings.when(Bindings.createBooleanBinding(() -> {
-			final PackageTreeNode packageTreeNode = treeCell.getItem();
-			if (packageTreeNode == null) {
-				return false;
+			switch (packageTreeNode.getType()) {
+			case CLASSLOADER:
+				return packageTreeNode.getClassLoaderDescriptor().getDescription();
+			case PACKAGE:
+				return packageTreeNode.getPackagePart();
+			case CLASS:
+				return packageTreeNode.getLoadedClass().toString();
+			default:
+				log.warn("Unknown type: {}", packageTreeNode.getType());
+				return "";
 			}
-			return packageTreeNode.getLoadedClass() != null;
-		}, treeCell.itemProperty())).then(tooltip).otherwise((Tooltip) null));
+		}, treeCell.itemProperty()));
+		treeCell.tooltipProperty()
+		        .bind(Bindings.when(treeCell.itemProperty().isNotNull()).then(tooltip).otherwise((Tooltip) null));
 	}
 
 	private void setupContextMenu(TreeCell<PackageTreeNode> treeCell, TreeView<PackageTreeNode> classes) {
