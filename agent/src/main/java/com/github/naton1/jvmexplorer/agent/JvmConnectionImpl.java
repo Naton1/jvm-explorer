@@ -10,7 +10,7 @@ import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.JvmClient;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
-import com.github.naton1.jvmexplorer.protocol.Protocol;
+import com.github.naton1.jvmexplorer.protocol.PacketType;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
@@ -65,7 +65,7 @@ public class JvmConnectionImpl implements JvmConnection {
 	}
 
 	@Override
-	public void requestPackets(int packetType) {
+	public void requestPackets(PacketType packetType) {
 		executorService.submit(new PacketProcessor(packetType));
 	}
 
@@ -78,7 +78,7 @@ public class JvmConnectionImpl implements JvmConnection {
 		return instrumentationHelper.redefineClass(klass, bytes);
 	}
 
-	private void processActiveClassPackets(int packetType) {
+	private void processLoadedClassPackets(PacketType packetType) {
 		final List<Class<?>> applicationClasses = instrumentationHelper.getApplicationClasses();
 		final List<LoadedClass> classes = new ArrayList<>();
 		for (Class<?> c : applicationClasses) {
@@ -111,7 +111,7 @@ public class JvmConnectionImpl implements JvmConnection {
 
 	@RequiredArgsConstructor
 	private class PacketProcessor implements Runnable {
-		private final int packetType;
+		private final PacketType packetType;
 
 		@Override
 		public void run() {
@@ -119,8 +119,8 @@ public class JvmConnectionImpl implements JvmConnection {
 			try {
 				// Note: could probably generalize the logic for packets in the future, if needed
 				switch (packetType) {
-				case Protocol.PACKET_TYPE_ACTIVE_CLASSES:
-					processActiveClassPackets(packetType);
+				case LOADED_CLASSES:
+					processLoadedClassPackets(packetType);
 					break;
 				default:
 					Log.warn("Unknown packet type: " + packetType);

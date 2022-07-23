@@ -48,7 +48,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 	private final FilterableTreeItem<PackageTreeNode> classesTreeRoot;
 	private final ExportHelper exportHelper;
 	private final BooleanBinding jvmLoaded;
-	private final Consumer<RunningJvm> onLoadActiveClasses;
+	private final Consumer<RunningJvm> onLoadClasses;
 
 	@Override
 	public TreeCell<PackageTreeNode> call(TreeView<PackageTreeNode> classes) {
@@ -150,7 +150,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			}
 			classesTreeRoot.getSourceChildren().clear();
 			// I think my java version is broken... it can't compile obvious things like this without casting
-			executorService.submit((Runnable) () -> onLoadActiveClasses.accept(activeJvm));
+			executorService.submit((Runnable) () -> onLoadClasses.accept(activeJvm));
 		});
 
 		treeCell.setContextMenu(classesContextMenu);

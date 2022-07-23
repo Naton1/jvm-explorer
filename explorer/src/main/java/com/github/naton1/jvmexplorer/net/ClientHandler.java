@@ -3,12 +3,12 @@ package com.github.naton1.jvmexplorer.net;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
-import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
-import com.github.naton1.jvmexplorer.protocol.Protocol;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
+import com.github.naton1.jvmexplorer.protocol.PacketType;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,8 +58,8 @@ public class ClientHandler extends Listener {
 		return getJvmConnection(runningJvm).map(j -> j.getExportFile(className)).orElse(null);
 	}
 
-	public List<LoadedClass> getActiveClasses(RunningJvm runningJvm, Consumer<Integer> onUpdateCount) {
-		return getServerTracker(runningJvm).map(serverTracker -> serverTracker.<LoadedClass>getPacketStream(Protocol.PACKET_TYPE_ACTIVE_CLASSES,
+	public List<LoadedClass> getLoadedClasses(RunningJvm runningJvm, Consumer<Integer> onUpdateCount) {
+		return getServerTracker(runningJvm).map(serverTracker -> serverTracker.<LoadedClass>getPacketStream(PacketType.LOADED_CLASSES,
 		                                                                                                    onUpdateCount))
 		                                   .map(str -> str.collect(Collectors.toList()))
 		                                   .orElse(null);

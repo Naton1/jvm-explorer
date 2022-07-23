@@ -158,7 +158,7 @@ public class LoadedClassesController {
 		                                            classesTreeRoot,
 		                                            exportHelper,
 		                                            jvmLoaded,
-		                                            this::loadActiveClasses));
+		                                            this::loadClasses));
 	}
 
 	private void setupTitlePaneText() {
@@ -208,8 +208,8 @@ public class LoadedClassesController {
 		});
 	}
 
-	public void loadActiveClasses(RunningJvm runningJvm) {
-		executorService.submit(() -> doLoadActiveClasses(runningJvm));
+	public void loadClasses(RunningJvm runningJvm) {
+		executorService.submit(() -> doLoadClasses(runningJvm));
 	}
 
 	private String getTitlePaneText() {
@@ -240,9 +240,9 @@ public class LoadedClassesController {
 		}
 	}
 
-	private void doLoadActiveClasses(RunningJvm runningJvm) {
+	private void doLoadClasses(RunningJvm runningJvm) {
 		Platform.runLater(() -> loadedClassProgressCount.set(0));
-		final List<LoadedClass> loadedClasses = clientHandler.getActiveClasses(runningJvm, loadedClassPercent -> {
+		final List<LoadedClass> loadedClasses = clientHandler.getLoadedClasses(runningJvm, loadedClassPercent -> {
 			Platform.runLater(() -> this.loadedClassProgressCount.set(loadedClassPercent));
 		});
 		if (loadedClasses == null) {

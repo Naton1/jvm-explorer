@@ -104,7 +104,7 @@ public class JvmExplorerController {
 	private void onConnect(RunningJvm jvm, Connection connection) {
 		log.debug("Connected to {}", jvm);
 		if (jvm.equals(runningJvmsController.getCurrentJvm())) {
-			loadedClassesController.loadActiveClasses(jvm);
+			loadedClassesController.loadClasses(jvm);
 		}
 	}
 

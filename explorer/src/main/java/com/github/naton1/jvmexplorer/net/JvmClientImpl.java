@@ -6,6 +6,7 @@ import com.esotericsoftware.kryonet.rmi.RemoteObject;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.protocol.JvmClient;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
+import com.github.naton1.jvmexplorer.protocol.PacketType;
 import com.github.naton1.jvmexplorer.protocol.Protocol;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +24,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class JvmClientImpl extends Connection implements JvmClient {
 
-	private final Map<Integer, PacketResponseHandler<?>> packetResponseHandlers = new ConcurrentHashMap<>();
+	private final Map<PacketType, PacketResponseHandler<?>> packetResponseHandlers = new ConcurrentHashMap<>();
 	private final ScheduledExecutorService executorService;
 
 	@Getter
@@ -65,7 +66,7 @@ public class JvmClientImpl extends Connection implements JvmClient {
 	}
 
 	@Override
-	public <T> void sendPacket(int packetType, T[] packet) {
+	public <T> void sendPacket(PacketType packetType, T[] packet) {
 		final PacketResponseHandler<T> packetResponseHandler = (PacketResponseHandler<T>) packetResponseHandlers.get(
 				packetType);
 		if (packetResponseHandler != null) {
@@ -77,7 +78,7 @@ public class JvmClientImpl extends Connection implements JvmClient {
 	}
 
 	@Override
-	public void endPacketTransfer(int packetType, int packetsSent) {
+	public void endPacketTransfer(PacketType packetType, int packetsSent) {
 		final PacketResponseHandler<?> packetResponseHandler = packetResponseHandlers.get(packetType);
 		if (packetResponseHandler != null) {
 			log.debug("Received all packets for {}", packetType);
@@ -99,7 +100,7 @@ public class JvmClientImpl extends Connection implements JvmClient {
 		return runningJvm != null;
 	}
 
-	public <T> Stream<T> getPacketStream(int packetType, Consumer<Integer> onUpdateCount) {
+	public <T> Stream<T> getPacketStream(PacketType packetType, Consumer<Integer> onUpdateCount) {
 		final AtomicReference<Future<?>> scheduledCleanup = new AtomicReference<>();
 		final PacketResponseHandler<T> packetResponseHandler = new PacketResponseHandler<>(() -> {
 			log.debug("Cleaning up packet stream for {}", packetType);

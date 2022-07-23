@@ -11,7 +11,7 @@ public interface JvmConnection {
 
 	byte[] getExportFile(String name);
 
-	void requestPackets(int packetType);
+	void requestPackets(PacketType packetType);
 
 	boolean redefineClass(String name, byte[] bytes);
 

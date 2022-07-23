@@ -11,8 +11,6 @@ public class Protocol {
 	public static final int RMI_JVM_CLIENT = 1;
 	public static final int RMI_JVM_CONNECTION = 2;
 
-	public static final int PACKET_TYPE_ACTIVE_CLASSES = 1;
-
 	private static final Class<?>[] DEFAULTS = { int.class,
 	                                             boolean.class,
 	                                             short.class,
@@ -47,6 +45,7 @@ public class Protocol {
 		kryo.register(ClassFields.class);
 		kryo.register(JvmClient.class);
 		kryo.register(JvmConnection.class);
+		kryo.register(PacketType.class);
 		kryo.register(WrappedObject.class);
 
 		// Setup all primitives for field reading/writing

@@ -5,8 +5,8 @@ public interface JvmClient {
 
 	void register(String identifier);
 
-	<T> void sendPacket(int packetType, T[] packets);
+	<T> void sendPacket(PacketType packetType, T[] packets);
 
-	void endPacketTransfer(int packetType, int packetsSent);
+	void endPacketTransfer(PacketType packetType, int packetsSent);
 
 }

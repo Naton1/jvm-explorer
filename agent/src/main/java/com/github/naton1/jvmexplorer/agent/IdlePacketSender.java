@@ -3,6 +3,7 @@ package com.github.naton1.jvmexplorer.agent;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.github.naton1.jvmexplorer.protocol.JvmClient;
+import com.github.naton1.jvmexplorer.protocol.PacketType;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Queue;
@@ -11,7 +12,7 @@ import java.util.Queue;
 public class IdlePacketSender<T> extends Listener {
 
 	private final Queue<T[]> packets;
-	private final int packetType;
+	private final PacketType packetType;
 	private final JvmClient jvmClient;
 	private final boolean autoEnd;
 
