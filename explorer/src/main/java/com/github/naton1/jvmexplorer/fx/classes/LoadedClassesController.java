@@ -105,10 +105,11 @@ public class LoadedClassesController {
 			final String text = searchClasses.getText().trim();
 			final Predicate<String> predicate = filterHelper.createStringPredicate(text);
 			return t -> {
-				if (t.getLoadedClass() != null) {
+				// We are only searching classes here. A node will stay visible if any of its children are.
+				if (t.getType() == PackageTreeNode.Type.CLASS) {
 					return predicate.test(t.getLoadedClass().toString());
 				}
-				return predicate.test(t.toString());
+				return false;
 			};
 		}, searchClasses.textProperty()));
 		classes.setRoot(classesTreeRoot);

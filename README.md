@@ -10,7 +10,8 @@ JVM Explorer is a Java desktop application for browsing loaded class files insid
 
 * Browse local JVMs
 * View all classes inside each JVM
-* Search (supports regex) to find specific classes
+* Search to find specific classes (supports regex)
+* View classloader hierarchy
 * View decompiled bytecode
 * View disassembled bytecode
 * Export loaded classes to a JAR file
@@ -75,7 +76,6 @@ Note: this uses the Java Attach API, so any limitations that come with that will
 * Search code
 * Detect changes between current classes and previous classes
 * Internationalization
-* Show class loader in class tree
 
 ## License
 
