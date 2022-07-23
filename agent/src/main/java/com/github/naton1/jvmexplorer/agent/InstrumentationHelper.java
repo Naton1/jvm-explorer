@@ -48,7 +48,7 @@ public class InstrumentationHelper {
 	}
 
 	private static boolean isAgentClass(Class<?> klass) {
-		final CodeSource agentCodeSource = InstrumentationHelper.class.getProtectionDomain().getCodeSource();
+		final CodeSource agentCodeSource = JvmExplorerAgent.class.getProtectionDomain().getCodeSource();
 		final CodeSource classCodeSource = klass.getProtectionDomain().getCodeSource();
 		return agentCodeSource.getLocation() != null && classCodeSource != null && agentCodeSource.getLocation()
 		                                                                                          .equals(classCodeSource.getLocation());
@@ -96,9 +96,14 @@ public class InstrumentationHelper {
 				if (i == classFieldPath.getClassFieldKeys().length - 1) {
 					// At the end of the path, let's set
 					// Let's support changing a final value :)
-					final Field modifiersField = Field.class.getDeclaredField("modifiers");
-					modifiersField.setAccessible(true);
-					modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+					try {
+						final Field modifiersField = Field.class.getDeclaredField("modifiers");
+						modifiersField.setAccessible(true);
+						modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+					}
+					catch (NoSuchFieldException e) {
+						Log.debug("Could not find modifier field; may fail to overwrite a final field", e);
+					}
 					field.set(currentObject, newValue);
 					Log.debug("Set field " + field + " to " + newValue);
 					return true;

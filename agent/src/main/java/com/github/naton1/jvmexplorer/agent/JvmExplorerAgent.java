@@ -12,14 +12,15 @@ import com.github.naton1.jvmexplorer.protocol.Protocol;
 import java.io.File;
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class JvmExplorerAgent {
 
 	public static void agentmain(String agentArgs, Instrumentation instrumentation) {
 		final AgentConfiguration agentConfiguration = AgentConfiguration.parseAgentArgs(agentArgs);
-		final ExecutorService executorService = createExecutorService();
+		final ScheduledExecutorService executorService = createExecutorService();
 		final AgentFileLogger logger = setupLogger(agentConfiguration.getLogFilePath(),
 		                                           agentConfiguration.getLogLevel());
 		Log.info("Agent connected. Configuration: " + agentConfiguration);
@@ -37,8 +38,8 @@ public class JvmExplorerAgent {
 		}
 	}
 
-	private static ExecutorService createExecutorService() {
-		return Executors.newFixedThreadPool(3, new LogUncaughtExceptionThreadFactory());
+	private static ScheduledExecutorService createExecutorService() {
+		return Executors.newScheduledThreadPool(3, new LogUncaughtExceptionThreadFactory());
 	}
 
 	private static AgentFileLogger setupLogger(String logFilePath, int logLevel) {
@@ -48,7 +49,7 @@ public class JvmExplorerAgent {
 		return logger;
 	}
 
-	private static void setupRmi(Client client, ExecutorService executorService, String identifier,
+	private static void setupRmi(Client client, ScheduledExecutorService executorService, String identifier,
 	                             Instrumentation instrumentation) {
 		final Kryo kryo = client.getKryo();
 		Protocol.register(kryo);
@@ -57,10 +58,13 @@ public class JvmExplorerAgent {
 		((RemoteObject) serverTracker).setTransmitReturnValue(false);
 		((RemoteObject) serverTracker).setTransmitExceptions(false);
 		final InstrumentationHelper instrumentationHelper = new InstrumentationHelper(instrumentation);
+		final ClassLoaderStore classLoaderStore = new ClassLoaderStore();
+		executorService.scheduleWithFixedDelay(new CleanClassLoaderStore(classLoaderStore), 10, 10, TimeUnit.SECONDS);
 		final JvmConnectionImpl jvmConnectionImpl = new JvmConnectionImpl(serverTracker,
 		                                                                  instrumentationHelper,
 		                                                                  client,
-		                                                                  executorService);
+		                                                                  executorService,
+		                                                                  classLoaderStore);
 		final ObjectSpace objectSpace = new ObjectSpace(client);
 		objectSpace.register(Protocol.RMI_JVM_CONNECTION, jvmConnectionImpl);
 		final ClientListener clientListener = new ClientListener(executorService, identifier, serverTracker);

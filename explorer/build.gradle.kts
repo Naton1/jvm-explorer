@@ -5,6 +5,7 @@ plugins {
     id("org.openjfx.javafxplugin") version "0.0.13"
     id("io.freefair.lombok") version "6.5.0.3"
     application
+    jacoco
 }
 
 group = "com.github.naton1"
@@ -108,6 +109,12 @@ tasks {
     processResources {
         dependsOn(":agent:jar")
         dependsOn(":launch-agent:jar")
+    }
+    test {
+        finalizedBy(jacocoTestReport)
+    }
+    jacocoTestReport {
+        dependsOn(test)
     }
     val verifyJarStarts by creating {
         dependsOn(jar)

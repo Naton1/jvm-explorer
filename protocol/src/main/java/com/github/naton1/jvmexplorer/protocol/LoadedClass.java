@@ -7,6 +7,7 @@ import lombok.Value;
 public class LoadedClass implements Comparable<LoadedClass> {
 
 	private final String name;
+	private final ClassLoaderDescriptor classLoaderDescriptor;
 
 	public String getSimpleName() {
 		return ClassNameHelper.getSimpleName(name);

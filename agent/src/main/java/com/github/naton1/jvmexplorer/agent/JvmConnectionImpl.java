@@ -2,13 +2,14 @@ package com.github.naton1.jvmexplorer.agent;
 
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.minlog.Log;
-import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
+import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.JvmClient;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.Protocol;
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +26,7 @@ public class JvmConnectionImpl implements JvmConnection {
 	private final InstrumentationHelper instrumentationHelper;
 	private final Client client;
 	private final ExecutorService executorService;
+	private final ClassLoaderStore classLoaderStore;
 
 	@Override
 	public ClassContent getClassContent(LoadedClass loadedClass) {
@@ -81,7 +83,9 @@ public class JvmConnectionImpl implements JvmConnection {
 		final List<LoadedClass> classes = new ArrayList<>();
 		for (Class<?> c : applicationClasses) {
 			final String className = c.getName();
-			final LoadedClass loadedClass = new LoadedClass(className);
+			final ClassLoaderDescriptor classLoaderDescriptor =
+					c.getClassLoader() != null ? classLoaderStore.store(c.getClassLoader()) : null;
+			final LoadedClass loadedClass = new LoadedClass(className, classLoaderDescriptor);
 			classes.add(loadedClass);
 		}
 		final int packetSize = 100;
