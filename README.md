@@ -4,7 +4,7 @@ JVM Explorer is a Java desktop application for browsing loaded class files insid
 
 <img src="resources/readme-screenshot.png" alt="JVM Explorer Screenshot" />
 
-[![Release](https://github.com/Naton1/jvm-explorer/actions/workflows/release.yml/badge.svg)](https://github.com/Naton1/jvm-explorer/actions/workflows/release.yml)
+[![Build](https://github.com/Naton1/jvm-explorer/actions/workflows/build.yml/badge.svg)](https://github.com/Naton1/jvm-explorer/actions/workflows/build.yml)
 
 ## Features
 
@@ -55,6 +55,11 @@ Two logs files `application.log` and `agent.log` are created at `[User Home]/jvm
 * Must attach to a JVM that supports the Java Attach API
 
 Note: this uses the Java Attach API, so any limitations that come with that will apply here.
+
+## Project Principles
+
+* Maintain a simple and easy-to-use interface
+* Take advantage of attaching to running JVMs - this is not a traditional GUI decompiler
 
 ## Possible Enhancements
 
