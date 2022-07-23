@@ -9,7 +9,7 @@ import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
 import com.github.naton1.jvmexplorer.helper.FilterHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
-import com.github.naton1.jvmexplorer.protocol.ActiveClass;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.AgentConfiguration;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import javafx.application.Platform;
@@ -94,8 +94,8 @@ public class LoadedClassesController {
 			final String text = searchClasses.getText().trim();
 			final Predicate<String> predicate = filterHelper.createStringPredicate(text);
 			return t -> {
-				if (t.getActiveClass() != null) {
-					return predicate.test(t.getActiveClass().toString());
+				if (t.getLoadedClass() != null) {
+					return predicate.test(t.getLoadedClass().toString());
 				}
 				return predicate.test(t.toString());
 			};
@@ -190,7 +190,7 @@ public class LoadedClassesController {
 			currentClass.setValue(null);
 			return;
 		}
-		if (newv.getValue().getActiveClass() == null) {
+		if (newv.getValue().getLoadedClass() == null) {
 			// Selected a package, not a class
 			return;
 		}
@@ -201,7 +201,7 @@ public class LoadedClassesController {
 		log.debug("Received class content");
 		executorService.submit(() -> {
 			final ClassContent classContent = clientHandler.getClassContent(selectedJvm,
-			                                                                newv.getValue().getActiveClass());
+			                                                                newv.getValue().getLoadedClass());
 			if (classContent != null) {
 				Platform.runLater(() -> currentClass.set(classContent));
 			}
@@ -213,8 +213,8 @@ public class LoadedClassesController {
 	}
 
 	private String getTitlePaneText() {
-		final long visibleItems = classesTreeRoot.streamVisible().filter(p -> p.getActiveClass() != null).count();
-		final long sourceItems = classesTreeRoot.streamSource().filter(p -> p.getActiveClass() != null).count();
+		final long visibleItems = classesTreeRoot.streamVisible().filter(p -> p.getLoadedClass() != null).count();
+		final long sourceItems = classesTreeRoot.streamSource().filter(p -> p.getLoadedClass() != null).count();
 		return "Loaded Classes (" + (visibleItems == sourceItems ? visibleItems : (visibleItems + "/" + sourceItems))
 		       + ")";
 	}
@@ -242,15 +242,15 @@ public class LoadedClassesController {
 
 	private void doLoadActiveClasses(RunningJvm runningJvm) {
 		Platform.runLater(() -> loadedClassProgressCount.set(0));
-		final List<ActiveClass> activeClasses = clientHandler.getActiveClasses(runningJvm, loadedClassPercent -> {
+		final List<LoadedClass> loadedClasses = clientHandler.getActiveClasses(runningJvm, loadedClassPercent -> {
 			Platform.runLater(() -> this.loadedClassProgressCount.set(loadedClassPercent));
 		});
-		if (activeClasses == null) {
+		if (loadedClasses == null) {
 			log.warn("Failed to load active classes: {}", runningJvm);
 			return;
 		}
 		log.debug("Received loaded classes for {}", runningJvm);
-		final PackageTreeNode packageTreeRoot = buildPackageTree(activeClasses);
+		final PackageTreeNode packageTreeRoot = buildPackageTree(loadedClasses);
 		Platform.runLater(() -> {
 			final FilterableTreeItem<PackageTreeNode> root = packageTreeRoot.toTreeItem();
 			classesTreeRoot.getSourceChildren().setAll(root.getSourceChildren());
@@ -258,10 +258,10 @@ public class LoadedClassesController {
 		});
 	}
 
-	private PackageTreeNode buildPackageTree(List<ActiveClass> activeClasses) {
+	private PackageTreeNode buildPackageTree(List<LoadedClass> loadedClasses) {
 		final PackageTreeNode packageTreeRoot = new PackageTreeNode(null, null);
-		for (ActiveClass activeClass : activeClasses) {
-			final String[] classNameParts = activeClass.getName().split("\\.");
+		for (LoadedClass loadedClass : loadedClasses) {
+			final String[] classNameParts = loadedClass.getName().split("\\.");
 			PackageTreeNode packageTree = packageTreeRoot;
 			for (int i = 0; i < classNameParts.length - 1; i++) {
 				final String classNamePart = classNameParts[i];
@@ -272,8 +272,8 @@ public class LoadedClassesController {
 			final String simpleClassName = classNameParts[classNameParts.length - 1];
 			final PackageTreeNode previous = packageTree.getChildren()
 			                                            .put(simpleClassName,
-			                                                 new PackageTreeNode(activeClass, simpleClassName));
-			if (previous != null && previous.getActiveClass() != null) {
+			                                                 new PackageTreeNode(loadedClass, simpleClassName));
+			if (previous != null && previous.getLoadedClass() != null) {
 				log.warn("Loaded duplicate class: {}", simpleClassName);
 			}
 		}

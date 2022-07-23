@@ -5,7 +5,7 @@ import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
 import com.github.naton1.jvmexplorer.helper.PatchHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
-import com.github.naton1.jvmexplorer.protocol.ActiveClass;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -84,14 +84,14 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			if (packageTreeNode == null) {
 				return "";
 			}
-			return String.valueOf(packageTreeNode.getActiveClass());
+			return String.valueOf(packageTreeNode.getLoadedClass());
 		}, treeCell.itemProperty()));
 		treeCell.tooltipProperty().bind(Bindings.when(Bindings.createBooleanBinding(() -> {
 			final PackageTreeNode packageTreeNode = treeCell.getItem();
 			if (packageTreeNode == null) {
 				return false;
 			}
-			return packageTreeNode.getActiveClass() != null;
+			return packageTreeNode.getLoadedClass() != null;
 		}, treeCell.itemProperty())).then(tooltip).otherwise((Tooltip) null));
 	}
 
@@ -107,19 +107,19 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			if (packageTreeNode == null) {
 				return;
 			}
-			final ActiveClass activeClass = packageTreeNode.getActiveClass();
-			if (activeClass == null) {
+			final LoadedClass loadedClass = packageTreeNode.getLoadedClass();
+			if (loadedClass == null) {
 				return;
 			}
 			final FileChooser fileChooser = new FileChooser();
 			fileChooser.setTitle("Export Class");
 			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Class Files", "*.class"));
-			fileChooser.setInitialFileName(activeClass.getSimpleName() + ".class");
+			fileChooser.setInitialFileName(loadedClass.getSimpleName() + ".class");
 			final File selectedFile = fileChooser.showSaveDialog(classes.getScene().getWindow());
 			if (selectedFile == null) {
 				return;
 			}
-			executorService.submit(() -> export(selectedFile, activeClass, activeJvm));
+			executorService.submit(() -> export(selectedFile, loadedClass, activeJvm));
 		});
 		final MenuItem exportClasses = new MenuItem("Export Classes");
 		exportClasses.setOnAction(e -> {
@@ -136,9 +136,9 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 				return;
 			}
 			final List<String> roots = classesTreeRoot.streamVisible()
-			                                          .map(PackageTreeNode::getActiveClass)
+			                                          .map(PackageTreeNode::getLoadedClass)
 			                                          .filter(Objects::nonNull)
-			                                          .map(ActiveClass::getName)
+			                                          .map(LoadedClass::getName)
 			                                          .collect(Collectors.toList());
 			executorService.submit(() -> export(selectedFile, roots, activeJvm));
 		});
@@ -161,7 +161,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 		final MenuItem replaceClass = new MenuItem("Replace Class");
 		replaceClass.setOnAction(e -> {
 			final PackageTreeNode selectedClass = treeCell.getItem();
-			if (selectedClass == null || selectedClass.getActiveClass() == null) {
+			if (selectedClass == null || selectedClass.getLoadedClass() == null) {
 				return;
 			}
 			final RunningJvm jvm = currentJvm.get();
@@ -176,7 +176,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 				return;
 			}
 			executorService.submit(() -> {
-				replaceClass(selectedFile, selectedClass.getActiveClass(), jvm);
+				replaceClass(selectedFile, selectedClass.getLoadedClass(), jvm);
 			});
 		});
 
@@ -199,7 +199,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 		classesContextMenu.getItems().addAll(exportClasses, reloadClasses);
 		treeCell.itemProperty().addListener((obs, old, newv) -> {
 			classesContextMenu.getItems().clear();
-			if (newv != null && newv.getActiveClass() != null) {
+			if (newv != null && newv.getLoadedClass() != null) {
 				classesContextMenu.getItems().addAll(exportClass, replaceClass, new SeparatorMenuItem());
 			}
 			classesContextMenu.getItems().addAll(exportClasses, replaceClasses, reloadClasses);
@@ -208,13 +208,13 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 		treeCell.setContextMenu(classesContextMenu);
 	}
 
-	private void export(File selectedFile, ActiveClass activeClass, RunningJvm activeJvm) {
+	private void export(File selectedFile, LoadedClass loadedClass, RunningJvm activeJvm) {
 		try {
-			final byte[] classContent = clientHandler.getExportFile(activeJvm, activeClass.getName());
+			final byte[] classContent = clientHandler.getExportFile(activeJvm, loadedClass.getName());
 			Files.write(selectedFile.toPath(), classContent);
 		}
 		catch (IOException ex) {
-			log.warn("Failed to write class file {}", activeClass.getName(), ex);
+			log.warn("Failed to write class file {}", loadedClass.getName(), ex);
 		}
 	}
 
@@ -251,7 +251,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 		});
 	}
 
-	private void replaceClass(File selectedFile, ActiveClass activeClass, RunningJvm activeJvm) {
+	private void replaceClass(File selectedFile, LoadedClass loadedClass, RunningJvm activeJvm) {
 		final byte[] contents;
 		try {
 			contents = Files.readAllBytes(selectedFile.toPath());
@@ -260,7 +260,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			log.warn("Failed to read file", ex);
 			return;
 		}
-		final boolean replaced = clientHandler.replaceClass(activeJvm, activeClass.getName(), contents);
+		final boolean replaced = clientHandler.replaceClass(activeJvm, loadedClass.getName(), contents);
 		Platform.runLater(() -> {
 			final Alert.AlertType alertType = replaced ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR;
 			final String title = replaced ? "Replaced Class" : "Replace Failed";

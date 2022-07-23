@@ -3,7 +3,7 @@ package com.github.naton1.jvmexplorer.protocol;
 // Implemented in the client
 public interface JvmConnection {
 
-	ClassContent getClassContent(ActiveClass activeClass);
+	ClassContent getClassContent(LoadedClass loadedClass);
 
 	boolean setField(ClassFieldPath classFieldPath, Object newValue);
 

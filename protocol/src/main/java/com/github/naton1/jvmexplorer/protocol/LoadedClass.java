@@ -4,7 +4,7 @@ import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
 import lombok.Value;
 
 @Value
-public class ActiveClass implements Comparable<ActiveClass> {
+public class LoadedClass implements Comparable<LoadedClass> {
 
 	private final String name;
 
@@ -18,7 +18,7 @@ public class ActiveClass implements Comparable<ActiveClass> {
 	}
 
 	@Override
-	public int compareTo(ActiveClass o) {
+	public int compareTo(LoadedClass o) {
 		return name.compareTo(o.name);
 	}
 

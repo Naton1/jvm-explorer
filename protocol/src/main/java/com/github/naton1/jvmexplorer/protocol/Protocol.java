@@ -36,8 +36,8 @@ public class Protocol {
 		kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
 
 		// Setup core classes
-		kryo.register(ActiveClass.class);
-		kryo.register(ActiveClass[].class);
+		kryo.register(LoadedClass.class);
+		kryo.register(LoadedClass[].class);
 		kryo.register(ClassContent.class);
 		kryo.register(ClassField.class);
 		kryo.register(ClassField[].class);

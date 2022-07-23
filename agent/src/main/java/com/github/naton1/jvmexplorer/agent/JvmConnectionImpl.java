@@ -2,7 +2,7 @@ package com.github.naton1.jvmexplorer.agent;
 
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.minlog.Log;
-import com.github.naton1.jvmexplorer.protocol.ActiveClass;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
@@ -27,15 +27,15 @@ public class JvmConnectionImpl implements JvmConnection {
 	private final ExecutorService executorService;
 
 	@Override
-	public ClassContent getClassContent(ActiveClass activeClass) {
-		final Class<?> klass = instrumentationHelper.getClassByName(activeClass.getName());
+	public ClassContent getClassContent(LoadedClass loadedClass) {
+		final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName());
 		if (klass == null) {
-			Log.warn("Failed to find class: " + activeClass);
+			Log.warn("Failed to find class: " + loadedClass);
 			return null;
 		}
 		final byte[] classContent = instrumentationHelper.getClassBytes(klass);
 		final ClassFields classFields = instrumentationHelper.getClassFields(klass, null);
-		return new ClassContent(activeClass.getName(), classContent, classFields);
+		return new ClassContent(loadedClass.getName(), classContent, classFields);
 	}
 
 	@Override
@@ -78,26 +78,26 @@ public class JvmConnectionImpl implements JvmConnection {
 
 	private void processActiveClassPackets(int packetType) {
 		final List<Class<?>> applicationClasses = instrumentationHelper.getApplicationClasses();
-		final List<ActiveClass> classes = new ArrayList<>();
+		final List<LoadedClass> classes = new ArrayList<>();
 		for (Class<?> c : applicationClasses) {
 			final String className = c.getName();
-			final ActiveClass activeClass = new ActiveClass(className);
-			classes.add(activeClass);
+			final LoadedClass loadedClass = new LoadedClass(className);
+			classes.add(loadedClass);
 		}
 		final int packetSize = 100;
 		final int packetCount = (int) Math.ceil(classes.size() / (double) packetSize);
-		final Queue<ActiveClass[]> activeClassPackets = new ConcurrentLinkedQueue<>();
-		final IdlePacketSender<ActiveClass> idlePacketSender = new IdlePacketSender<>(activeClassPackets,
+		final Queue<LoadedClass[]> loadedClassPackets = new ConcurrentLinkedQueue<>();
+		final IdlePacketSender<LoadedClass> idlePacketSender = new IdlePacketSender<>(loadedClassPackets,
 		                                                                              packetType,
 		                                                                              jvmClient,
 		                                                                              false);
 		client.addListener(idlePacketSender);
 		try {
 			for (int i = 0; i < packetCount; i++) {
-				final ActiveClass[] activeClasses = classes.subList(i * packetSize,
+				final LoadedClass[] loadedClasses = classes.subList(i * packetSize,
 				                                                    Math.min((i + 1) * packetSize, classes.size()))
-				                                           .toArray(new ActiveClass[0]);
-				activeClassPackets.add(activeClasses);
+				                                           .toArray(new LoadedClass[0]);
+				loadedClassPackets.add(loadedClasses);
 			}
 		}
 		finally {

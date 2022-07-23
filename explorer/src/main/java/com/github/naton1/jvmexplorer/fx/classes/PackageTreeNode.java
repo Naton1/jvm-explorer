@@ -1,6 +1,6 @@
 package com.github.naton1.jvmexplorer.fx.classes;
 
-import com.github.naton1.jvmexplorer.protocol.ActiveClass;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.Image;
 import lombok.Getter;
@@ -15,7 +15,7 @@ import java.util.Objects;
 public class PackageTreeNode implements Comparable<PackageTreeNode> {
 
 	private final Map<String, PackageTreeNode> children = new HashMap<>();
-	private final ActiveClass activeClass;
+	private final LoadedClass loadedClass;
 	private final String packagePart;
 
 	public FilterableTreeItem<PackageTreeNode> toTreeItem() {
@@ -32,19 +32,19 @@ public class PackageTreeNode implements Comparable<PackageTreeNode> {
 
 	@Override
 	public int compareTo(PackageTreeNode o) {
-		if (getActiveClass() == null && o.getActiveClass() == null) {
+		if (this.getLoadedClass() == null && o.getLoadedClass() == null) {
 			return getPackagePart().compareTo(o.getPackagePart());
 		}
-		else if (getActiveClass() != null && o.getActiveClass() != null) {
-			return getActiveClass().compareTo(o.getActiveClass());
+		else if (this.getLoadedClass() != null && o.getLoadedClass() != null) {
+			return this.getLoadedClass().compareTo(o.getLoadedClass());
 		}
 		else {
-			return getActiveClass() == null ? -1 : 1;
+			return this.getLoadedClass() == null ? -1 : 1;
 		}
 	}
 
 	public Type getType() {
-		if (activeClass != null) {
+		if (loadedClass != null) {
 			return Type.CLASS;
 		}
 		return Type.PACKAGE;

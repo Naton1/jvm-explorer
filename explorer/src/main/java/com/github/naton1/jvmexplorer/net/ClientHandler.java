@@ -3,7 +3,7 @@ package com.github.naton1.jvmexplorer.net;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
-import com.github.naton1.jvmexplorer.protocol.ActiveClass;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
@@ -31,8 +31,8 @@ public class ClientHandler extends Listener {
 	private final BiConsumer<RunningJvm, Connection> onConnect;
 	private final Consumer<RunningJvm> onDisconnect;
 
-	public ClassContent getClassContent(RunningJvm runningJvm, ActiveClass activeClass) {
-		return getJvmConnection(runningJvm).map(j -> j.getClassContent(activeClass)).orElse(null);
+	public ClassContent getClassContent(RunningJvm runningJvm, LoadedClass loadedClass) {
+		return getJvmConnection(runningJvm).map(j -> j.getClassContent(loadedClass)).orElse(null);
 	}
 
 	private Optional<JvmConnection> getJvmConnection(RunningJvm runningJvm) {
@@ -58,8 +58,8 @@ public class ClientHandler extends Listener {
 		return getJvmConnection(runningJvm).map(j -> j.getExportFile(className)).orElse(null);
 	}
 
-	public List<ActiveClass> getActiveClasses(RunningJvm runningJvm, Consumer<Integer> onUpdateCount) {
-		return getServerTracker(runningJvm).map(serverTracker -> serverTracker.<ActiveClass>getPacketStream(Protocol.PACKET_TYPE_ACTIVE_CLASSES,
+	public List<LoadedClass> getActiveClasses(RunningJvm runningJvm, Consumer<Integer> onUpdateCount) {
+		return getServerTracker(runningJvm).map(serverTracker -> serverTracker.<LoadedClass>getPacketStream(Protocol.PACKET_TYPE_ACTIVE_CLASSES,
 		                                                                                                    onUpdateCount))
 		                                   .map(str -> str.collect(Collectors.toList()))
 		                                   .orElse(null);
