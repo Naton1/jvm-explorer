@@ -7,8 +7,7 @@ import java.io.File;
 @Slf4j
 public class Startup {
 
-	private static final File AGENT_LOG_FILE = new File(System.getProperty("user.home"),
-	                                                    "jvm-explorer/logs/agent" + ".log");
+	private static final File AGENT_LOG_FILE = new File(JvmExplorer.APP_DIR, "/logs/agent.log");
 
 	public static void main(String[] args) {
 		final String version = Startup.class.getPackage().getImplementationVersion();

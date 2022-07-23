@@ -1,6 +1,7 @@
 package com.github.naton1.jvmexplorer.fx.classes;
 
 import com.esotericsoftware.minlog.Log;
+import com.github.naton1.jvmexplorer.JvmExplorer;
 import com.github.naton1.jvmexplorer.agent.AgentException;
 import com.github.naton1.jvmexplorer.agent.AgentPreparer;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
@@ -27,6 +28,7 @@ import javafx.scene.control.TreeView;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -138,6 +140,7 @@ public class LoadedClassesController {
 		                         .port(serverPort)
 		                         .identifier(runningJvm.getId() + ":" + runningJvm.getName())
 		                         .logLevel(Log.LEVEL_DEBUG)
+		                         .logFilePath(new File(JvmExplorer.APP_DIR, "logs/agent.log").getAbsolutePath())
 		                         .build()
 		                         .toAgentArgs();
 	}

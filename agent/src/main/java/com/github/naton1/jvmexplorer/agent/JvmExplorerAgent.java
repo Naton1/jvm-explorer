@@ -17,12 +17,11 @@ import java.util.concurrent.Executors;
 
 public class JvmExplorerAgent {
 
-	private static final File LOG_FILE = new File(System.getProperty("user.home"), "jvm-explorer/logs/agent.log");
-
 	public static void agentmain(String agentArgs, Instrumentation instrumentation) {
 		final AgentConfiguration agentConfiguration = AgentConfiguration.parseAgentArgs(agentArgs);
 		final ExecutorService executorService = createExecutorService();
-		final AgentFileLogger logger = setupLogger(agentConfiguration.getLogLevel());
+		final AgentFileLogger logger = setupLogger(agentConfiguration.getLogFilePath(),
+		                                           agentConfiguration.getLogLevel());
 		Log.info("Agent connected. Configuration: " + agentConfiguration);
 		try {
 			final Client client = new Client(1000000, 1000000);
@@ -42,8 +41,8 @@ public class JvmExplorerAgent {
 		return Executors.newFixedThreadPool(3, new LogUncaughtExceptionThreadFactory());
 	}
 
-	private static AgentFileLogger setupLogger(int logLevel) {
-		final AgentFileLogger logger = new AgentFileLogger(null, LOG_FILE, true);
+	private static AgentFileLogger setupLogger(String logFilePath, int logLevel) {
+		final AgentFileLogger logger = new AgentFileLogger(null, new File(logFilePath), true);
 		Log.setLogger(logger);
 		Log.set(logLevel);
 		return logger;

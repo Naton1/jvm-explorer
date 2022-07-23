@@ -1,7 +1,6 @@
 package com.github.naton1.jvmexplorer;
 
 import com.esotericsoftware.kryonet.Connection;
-import com.esotericsoftware.kryonet.Server;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.fx.classes.LoadedClassesController;
 import com.github.naton1.jvmexplorer.fx.jvms.RunningJvmsController;
@@ -12,19 +11,27 @@ import com.github.naton1.jvmexplorer.net.JvmExplorerServer;
 import com.github.naton1.jvmexplorer.net.OpenPortProvider;
 import com.github.naton1.jvmexplorer.net.ServerLauncher;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
+import com.github.naton1.jvmexplorer.settings.JvmExplorerSettings;
+import com.github.naton1.jvmexplorer.settings.SettingsStorage;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Slf4j
 public class JvmExplorerController {
+
+	private static final File SETTINGS_FILE = new File(JvmExplorer.APP_DIR, "settings.json");
+
+	private final SimpleObjectProperty<JvmExplorerSettings> settingsProperty = new SimpleObjectProperty<>();
 
 	private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(8);
 
@@ -63,6 +70,8 @@ public class JvmExplorerController {
 
 		setupTitlePaneText();
 
+		setupSettings();
+
 		wireChildControllers();
 	}
 
@@ -74,6 +83,12 @@ public class JvmExplorerController {
 			}
 			return "JVM Explorer";
 		}, this.runningJvmsController.currentJvmProperty()));
+	}
+
+	private void setupSettings() {
+		final SettingsStorage settingsStorage = new SettingsStorage();
+		settingsProperty.set(settingsStorage.load(SETTINGS_FILE));
+		settingsProperty.addListener((obs, old, newv) -> settingsStorage.save(SETTINGS_FILE, newv));
 	}
 
 	private void wireChildControllers() {

@@ -53,6 +53,9 @@ Two logs files `application.log` and `agent.log` are created at `[User Home]/jvm
 * Must attach to a JVM running the same architecture - a 32-bit JVM must attach to a 32-bit JVM
 * May have to attach to a JVM that was started by the same user
 * Must attach to a JVM that supports the Java Attach API
+* If you run an old version of this application and attach to a JVM, then update to a newer version and try to 
+  re-attach, the agent will be outdated. If there were changes to the client-server protocol, the agent will fail. 
+  Restart the target JVM to fix this.
 
 Note: this uses the Java Attach API, so any limitations that come with that will apply here.
 

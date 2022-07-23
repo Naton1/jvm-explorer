@@ -12,6 +12,7 @@ public class AgentConfigurationTest {
 		                                                                .logLevel(1)
 		                                                                .port(5000)
 		                                                                .hostName("1.1.1.1")
+		                                                                .logFilePath("log-file-path")
 		                                                                .build();
 		final String args = agentConfiguration.toAgentArgs();
 		final AgentConfiguration parsedAgentConfigured = AgentConfiguration.parseAgentArgs(args);
