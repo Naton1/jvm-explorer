@@ -40,7 +40,7 @@ class PacketResponseHandler<T> {
 			return;
 		}
 		addedInterrupt = true;
-		log.debug("Ending packet collection: {}", receivedItemCount);
+		log.debug("Ending packet collection, received: {}", receivedItemCount);
 		linkedBlockingQueue.add(INTERRUPT);
 		onCleanup.run();
 	}

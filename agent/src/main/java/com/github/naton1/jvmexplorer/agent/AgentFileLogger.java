@@ -57,7 +57,7 @@ public class AgentFileLogger extends Log.Logger {
 				if (printWriter == null) {
 					outputFile.getParentFile().mkdirs();
 					final FileWriter fileWriter = new FileWriter(outputFile, append);
-					printWriter = new PrintWriter(fileWriter);
+					printWriter = new PrintWriter(fileWriter, true);
 				}
 			}
 		}

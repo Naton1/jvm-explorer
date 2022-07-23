@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 
 @Slf4j
 public class SettingsStorage {
@@ -28,7 +29,7 @@ public class SettingsStorage {
 			final String settingsFileContent = Files.readString(settingsFile.toPath());
 			return GSON.fromJson(settingsFileContent, JvmExplorerSettings.class);
 		}
-		catch (FileNotFoundException e) {
+		catch (FileNotFoundException | NoSuchFileException e) {
 			return JvmExplorerSettings.builder().build();
 		}
 		catch (Exception e) {

@@ -43,6 +43,7 @@ public class Protocol {
 		kryo.register(ClassFieldKey[].class);
 		kryo.register(ClassFieldPath.class);
 		kryo.register(ClassFields.class);
+		kryo.register(ClassLoaderDescriptor.class);
 		kryo.register(JvmClient.class);
 		kryo.register(JvmConnection.class);
 		kryo.register(PacketType.class);

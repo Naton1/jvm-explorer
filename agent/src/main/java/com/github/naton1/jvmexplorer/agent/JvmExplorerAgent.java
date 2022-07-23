@@ -46,6 +46,7 @@ public class JvmExplorerAgent {
 		final AgentFileLogger logger = new AgentFileLogger(null, new File(logFilePath), true);
 		Log.setLogger(logger);
 		Log.set(logLevel);
+		Log.info("Initialized logger");
 		return logger;
 	}
 

@@ -40,6 +40,11 @@ public class LoadedClassesController {
 	private static final int CLASSES_NOT_LOADING = -1;
 
 	private static final String AGENT_PATH = "agents/agent.jar";
+	private static final File AGENT_LOG_FILE = new File(JvmExplorer.APP_DIR, "logs/agent.log");
+	static {
+		// Try to clean up on initial load. Prevents the file from growing too large.
+		AGENT_LOG_FILE.delete();
+	}
 
 	private final AgentPreparer agentPreparer = new AgentPreparer();
 	private final FilterableTreeItem<PackageTreeNode> classesTreeRoot = new FilterableTreeItem<>();
@@ -140,7 +145,7 @@ public class LoadedClassesController {
 		                         .port(serverPort)
 		                         .identifier(runningJvm.getId() + ":" + runningJvm.getName())
 		                         .logLevel(Log.LEVEL_DEBUG)
-		                         .logFilePath(new File(JvmExplorer.APP_DIR, "logs/agent.log").getAbsolutePath())
+		                         .logFilePath(AGENT_LOG_FILE.getAbsolutePath())
 		                         .build()
 		                         .toAgentArgs();
 	}
