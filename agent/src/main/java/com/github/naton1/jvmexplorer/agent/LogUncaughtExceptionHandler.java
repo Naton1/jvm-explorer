@@ -6,7 +6,7 @@ public class LogUncaughtExceptionHandler implements Thread.UncaughtExceptionHand
 
 	@Override
 	public void uncaughtException(Thread t, Throwable e) {
-		Log.error("Client update thread threw exception", e);
+		Log.error("Thread threw exception: " + t, e);
 	}
 
 }

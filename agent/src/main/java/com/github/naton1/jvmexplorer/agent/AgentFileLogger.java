@@ -45,7 +45,7 @@ public class AgentFileLogger extends Log.Logger {
 		try {
 			getPrintWriter().println(message);
 		}
-		catch (IOException e) {
+		catch (IOException | SecurityException e) {
 			// This should ideally never happen...
 			super.print(message);
 		}

@@ -230,8 +230,10 @@ public class InstrumentationHelper {
 			return new ClassField(classKey, fieldValue);
 		}
 		else if (fieldValue.getClass().isArray() && isPrimitiveOrWrapperOrString(fieldValue.getClass()
-		                                                                                   .getComponentType())
-		         && instrumentation.getObjectSize(fieldValue) < MAX_ARRAY_BYTES) {
+		                                                                                   .getComponentType())) {
+			if (instrumentation.getObjectSize(fieldValue) >= MAX_ARRAY_BYTES) {
+				return new ClassField(classKey, new WrappedObject(fieldValue.toString()));
+			}
 			return new ClassField(classKey, fieldValue);
 		}
 		else if (fieldValue.getClass().isArray()) {

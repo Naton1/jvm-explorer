@@ -39,7 +39,9 @@ public class JvmExplorerAgent {
 	}
 
 	private static ScheduledExecutorService createExecutorService() {
-		return Executors.newScheduledThreadPool(3, new LogUncaughtExceptionThreadFactory());
+		final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
+		                                                                                           new LogUncaughtExceptionThreadFactory());
+		return new VerboseScheduledExecutorService(scheduledExecutorService);
 	}
 
 	private static AgentFileLogger setupLogger(String logFilePath, int logLevel) {

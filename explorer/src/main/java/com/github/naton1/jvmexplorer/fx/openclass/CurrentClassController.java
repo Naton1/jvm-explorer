@@ -153,6 +153,7 @@ public class CurrentClassController {
 			});
 		}, 500L, TimeUnit.MILLISECONDS);
 		executorService.submit(() -> {
+			log.debug("Processing class {} with {}", classContent.getLoadedClass(), bytecodeTextifier);
 			final String processedClass = classContent.getClassContent().length > 0 ? bytecodeTextifier.process(
 					classContent.getClassContent()) : null;
 			processingPlaceholderTask.cancel(false);

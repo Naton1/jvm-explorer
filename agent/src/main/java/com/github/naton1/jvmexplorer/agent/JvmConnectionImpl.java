@@ -30,15 +30,25 @@ public class JvmConnectionImpl implements JvmConnection {
 
 	@Override
 	public ClassContent getClassContent(LoadedClass loadedClass) {
-		final ClassLoader classLoader = classLoaderStore.lookup(loadedClass.getClassLoaderDescriptor());
-		final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName(), classLoader);
-		if (klass == null) {
-			Log.warn("Failed to find class: " + loadedClass);
-			return null;
+		try {
+			Log.debug("Getting class content for: " + loadedClass);
+			final ClassLoader classLoader = classLoaderStore.lookup(loadedClass.getClassLoaderDescriptor());
+			final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName(), classLoader);
+			if (klass == null) {
+				Log.warn("Failed to find class: " + loadedClass);
+				return null;
+			}
+			Log.debug("Found class: " + klass);
+			final byte[] classContent = instrumentationHelper.getClassBytes(klass);
+			Log.debug("Found class bytes for: " + klass);
+			final ClassFields classFields = instrumentationHelper.getClassFields(klass, null);
+			Log.debug("Found class fields for: " + klass);
+			return new ClassContent(loadedClass, classContent, classFields);
 		}
-		final byte[] classContent = instrumentationHelper.getClassBytes(klass);
-		final ClassFields classFields = instrumentationHelper.getClassFields(klass, null);
-		return new ClassContent(loadedClass, classContent, classFields);
+		catch (Throwable t) {
+			Log.error("Caught", t);
+			throw t;
+		}
 	}
 
 	@Override
