@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.github.naton1"
-version = "0.5.4"
+version = "0.6.0"
 
 repositories {
     mavenCentral()
