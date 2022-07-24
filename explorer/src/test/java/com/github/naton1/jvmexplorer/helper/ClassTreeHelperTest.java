@@ -42,7 +42,7 @@ class ClassTreeHelperTest {
 
 		Assertions.assertEquals(expectedRoot,
 		                        root,
-		                        toDetailedString(expectedRoot, 0) + "\n!=\n" + toDetailedString(root, 0) + "\n");
+		                        expectedRoot.toDetailedString() + "\n!=\n" + root.toDetailedString() + "\n");
 	}
 
 	@Test
@@ -74,19 +74,7 @@ class ClassTreeHelperTest {
 
 		Assertions.assertEquals(expectedRoot,
 		                        root,
-		                        toDetailedString(expectedRoot, 0) + "\n!=\n" + toDetailedString(root, 0) + "\n");
-	}
-
-	private String toDetailedString(PackageTreeNode packageTreeNode, int indent) {
-		final String nodeString = packageTreeNode.getType() + "-" + packageTreeNode;
-		final String childrenString = "[" + packageTreeNode.getChildren()
-		                                                   .entrySet()
-		                                                   .stream()
-		                                                   .map(e -> e.getKey() + "-" + toDetailedString(e.getValue(),
-		                                                                                                 indent + 1))
-		                                                   .collect(Collectors.joining(",\n" + "\t".repeat(indent + 1)))
-		                              + "]";
-		return nodeString + " " + childrenString;
+		                        expectedRoot.toDetailedString() + "\n!=\n" +  root.toDetailedString() + "\n");
 	}
 
 }

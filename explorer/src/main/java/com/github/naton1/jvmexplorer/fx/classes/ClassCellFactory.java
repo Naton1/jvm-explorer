@@ -5,6 +5,7 @@ import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
 import com.github.naton1.jvmexplorer.helper.PatchHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
+import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.settings.JvmExplorerSettings;
 import javafx.application.Platform;
@@ -21,9 +22,11 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
+import javafx.stage.Window;
 import javafx.util.Callback;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +34,14 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -105,104 +111,31 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 
 	private void setupContextMenu(TreeCell<PackageTreeNode> treeCell, TreeView<PackageTreeNode> classes) {
 		final ContextMenu classesContextMenu = new ContextMenu();
-		final MenuItem exportClass = new MenuItem("Export Class");
-		exportClass.setOnAction(e -> {
-			final RunningJvm activeJvm = currentJvm.get();
-			if (activeJvm == null) {
-				return;
+
+		final MenuItem scopedExport = createScopedExport(treeCell, classes);
+		final MenuItem exportClasses = createExportClasses(classes);
+		final MenuItem reloadClasses = createReloadClasses();
+		final MenuItem scopedReplace = createScopedReplace(treeCell, classes);
+		final MenuItem replaceClasses = createReplaceClasses(classes);
+		final MenuItem includeClassLoader = createShowClassLoader(reloadClasses);
+
+		treeCell.itemProperty().addListener((obs, old, newv) -> {
+			classesContextMenu.getItems().clear();
+			if (newv != null) {
+				classesContextMenu.getItems().addAll(scopedExport, scopedReplace, new SeparatorMenuItem());
 			}
-			final PackageTreeNode packageTreeNode = treeCell.getItem();
-			if (packageTreeNode == null) {
-				return;
-			}
-			final LoadedClass loadedClass = packageTreeNode.getLoadedClass();
-			if (loadedClass == null) {
-				return;
-			}
-			final FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Export Class");
-			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Class Files", "*.class"));
-			fileChooser.setInitialFileName(loadedClass.getSimpleName() + ".class");
-			final File selectedFile = fileChooser.showSaveDialog(classes.getScene().getWindow());
-			if (selectedFile == null) {
-				return;
-			}
-			executorService.submit(() -> export(selectedFile, loadedClass, activeJvm));
-		});
-		final MenuItem exportClasses = new MenuItem("Export Classes");
-		exportClasses.setOnAction(e -> {
-			final RunningJvm activeJvm = currentJvm.get();
-			if (activeJvm == null) {
-				return;
-			}
-			final FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Export Classes");
-			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JAR Files", "*.jar"));
-			fileChooser.setInitialFileName(activeJvm.getName());
-			final File selectedFile = fileChooser.showSaveDialog(classes.getScene().getWindow());
-			if (selectedFile == null) {
-				return;
-			}
-			final List<LoadedClass> loadedClasses = classesTreeRoot.streamVisible()
-			                                                       .map(PackageTreeNode::getLoadedClass)
-			                                                       .filter(Objects::nonNull)
-			                                                       .collect(Collectors.toList());
-			executorService.submit(() -> export(selectedFile, loadedClasses, activeJvm));
-		});
-		final MenuItem reloadClasses = new MenuItem("Refresh Classes");
-		reloadClasses.setOnAction(e -> {
-			final RunningJvm activeJvm = currentJvm.get();
-			if (activeJvm == null) {
-				return;
-			}
-			classesTreeRoot.getSourceChildren().clear();
-			// I think my java version is broken... it can't compile obvious things like this without casting
-			executorService.submit((Runnable) () -> onLoadClasses.accept(activeJvm));
+			classesContextMenu.getItems()
+			                  .addAll(exportClasses,
+			                          replaceClasses,
+			                          reloadClasses,
+			                          new SeparatorMenuItem(),
+			                          includeClassLoader);
 		});
 
 		treeCell.setContextMenu(classesContextMenu);
+	}
 
-		reloadClasses.disableProperty().bind(jvmLoaded.not());
-		exportClasses.disableProperty().bind(jvmLoaded.not());
-
-		final MenuItem replaceClass = new MenuItem("Replace Class");
-		replaceClass.setOnAction(e -> {
-			final PackageTreeNode selectedClass = treeCell.getItem();
-			if (selectedClass == null || selectedClass.getLoadedClass() == null) {
-				return;
-			}
-			final RunningJvm jvm = currentJvm.get();
-			if (jvm == null) {
-				return;
-			}
-			final FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Replace Class");
-			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Class Files", "*.class"));
-			final File selectedFile = fileChooser.showOpenDialog(classes.getScene().getWindow());
-			if (selectedFile == null) {
-				return;
-			}
-			executorService.submit(() -> {
-				replaceClass(selectedFile, selectedClass.getLoadedClass(), jvm);
-			});
-		});
-
-		final MenuItem replaceClasses = new MenuItem("Replace Classes");
-		replaceClasses.setOnAction(e -> {
-			final RunningJvm jvm = currentJvm.get();
-			if (jvm == null) {
-				return;
-			}
-			final FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Replace Classes");
-			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JAR Files", "*.jar"));
-			final File selectedFile = fileChooser.showOpenDialog(classes.getScene().getWindow());
-			if (selectedFile == null) {
-				return;
-			}
-			executorService.submit(() -> replaceClasses(selectedFile, jvm));
-		});
-
+	private MenuItem createShowClassLoader(MenuItem reloadClasses) {
 		final CheckMenuItem includeClassLoader = new CheckMenuItem("Show Class Loaders");
 		includeClassLoader.setOnAction(e -> {
 			settings.getShowClassLoader().set(includeClassLoader.isSelected());
@@ -214,26 +147,243 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 			// Reload classes, if applicable
 			reloadClasses.getOnAction().handle(e);
 		});
-		settings.getShowClassLoader().addListener((obs, old, newv) -> {
-			includeClassLoader.setSelected(newv);
-		});
+		settings.getShowClassLoader().addListener((obs, old, newv) -> includeClassLoader.setSelected(newv));
 		includeClassLoader.setSelected(settings.getShowClassLoader().getValue());
+		return includeClassLoader;
+	}
 
-		classesContextMenu.getItems().addAll(exportClasses, reloadClasses);
-		treeCell.itemProperty().addListener((obs, old, newv) -> {
-			classesContextMenu.getItems().clear();
-			if (newv != null && newv.getLoadedClass() != null) {
-				classesContextMenu.getItems().addAll(exportClass, replaceClass, new SeparatorMenuItem());
+	private MenuItem createReplaceClasses(TreeView<PackageTreeNode> classes) {
+		final MenuItem replaceClasses = new MenuItem("Replace Classes");
+		replaceClasses.setOnAction(e -> {
+			final RunningJvm jvm = currentJvm.get();
+			if (jvm == null) {
+				return;
 			}
-			classesContextMenu.getItems()
-			                  .addAll(exportClasses,
-			                          replaceClasses,
-			                          reloadClasses,
-			                          new SeparatorMenuItem(),
-			                          includeClassLoader);
+			final File selectedFile = selectImportJarFile(classes.getScene().getWindow());
+			if (selectedFile == null) {
+				return;
+			}
+			executorService.submit(() -> replaceClasses(selectedFile, jvm, null));
 		});
+		return replaceClasses;
+	}
 
-		treeCell.setContextMenu(classesContextMenu);
+	private MenuItem createScopedReplace(TreeCell<PackageTreeNode> treeCell, TreeView<PackageTreeNode> classes) {
+		final MenuItem scopedReplace = new MenuItem("Replace Class");
+		scopedReplace.textProperty().bind(Bindings.createStringBinding(() -> {
+			final PackageTreeNode packageTreeNode = treeCell.getItem();
+			if (packageTreeNode == null) {
+				return "";
+			}
+			switch (packageTreeNode.getType()) {
+			case CLASSLOADER:
+				return "Replace Class Loader";
+			case PACKAGE:
+				return "Replace Package";
+			case CLASS:
+				return "Replace Class";
+			}
+			log.warn("Unknown type: {}", packageTreeNode.getType());
+			return "";
+		}, treeCell.itemProperty()));
+		scopedReplace.setOnAction(e -> {
+			final RunningJvm jvm = currentJvm.get();
+			if (jvm == null) {
+				return;
+			}
+			final PackageTreeNode packageTreeNode = treeCell.getItem();
+			if (packageTreeNode == null) {
+				return;
+			}
+			switch (packageTreeNode.getType()) {
+			case CLASSLOADER:
+				final File importClassLoader = selectImportJarFile(classes.getScene().getWindow());
+				if (importClassLoader == null) {
+					return;
+				}
+				final ClassLoaderDescriptor classLoaderDescriptor = packageTreeNode.getClassLoaderDescriptor();
+				executorService.submit(() -> replaceClasses(importClassLoader, jvm, classLoaderDescriptor));
+				break;
+			case PACKAGE:
+				final File importPackage = selectImportJarFile(classes.getScene().getWindow());
+				if (importPackage == null) {
+					return;
+				}
+				final ClassLoaderDescriptor packageClassLoader = getPackageClassLoader(treeCell.getTreeItem());
+				executorService.submit(() -> replaceClasses(importPackage, jvm, packageClassLoader));
+				break;
+			case CLASS:
+				final File selectedFile = selectImportClassFile(classes.getScene().getWindow());
+				if (selectedFile == null) {
+					return;
+				}
+				executorService.submit(() -> replaceClass(selectedFile, packageTreeNode.getLoadedClass(), jvm));
+				break;
+			}
+		});
+		return scopedReplace;
+	}
+
+	private MenuItem createReloadClasses() {
+		final MenuItem reloadClasses = new MenuItem("Refresh Classes");
+		reloadClasses.setOnAction(e -> {
+			final RunningJvm activeJvm = currentJvm.get();
+			if (activeJvm == null) {
+				return;
+			}
+			classesTreeRoot.getSourceChildren().clear();
+			// I think my java version is broken... it can't compile obvious things like this without casting
+			executorService.submit((Runnable) () -> onLoadClasses.accept(activeJvm));
+		});
+		return reloadClasses;
+	}
+
+	private MenuItem createExportClasses(TreeView<PackageTreeNode> classes) {
+		final MenuItem exportClasses = new MenuItem("Export Classes");
+		exportClasses.setOnAction(e -> {
+			final RunningJvm activeJvm = currentJvm.get();
+			if (activeJvm == null) {
+				return;
+			}
+			final File selectedFile = selectExportJarFile(activeJvm.getName(), classes.getScene().getWindow());
+			if (selectedFile == null) {
+				return;
+			}
+			final List<LoadedClass> loadedClasses = classesTreeRoot.streamVisible()
+			                                                       .map(PackageTreeNode::getLoadedClass)
+			                                                       .filter(Objects::nonNull)
+			                                                       .collect(Collectors.toList());
+			executorService.submit(() -> export(selectedFile, loadedClasses, activeJvm));
+		});
+		return exportClasses;
+	}
+
+	private MenuItem createScopedExport(TreeCell<PackageTreeNode> treeCell, TreeView<PackageTreeNode> classes) {
+		final MenuItem scopedExport = new MenuItem();
+		scopedExport.textProperty().bind(Bindings.createStringBinding(() -> {
+			final PackageTreeNode packageTreeNode = treeCell.getItem();
+			if (packageTreeNode == null) {
+				return "";
+			}
+			switch (packageTreeNode.getType()) {
+			case CLASSLOADER:
+				return "Export Class Loader";
+			case PACKAGE:
+				return "Export Package";
+			case CLASS:
+				return "Export Class";
+			}
+			log.warn("Unknown type: {}", packageTreeNode.getType());
+			return "";
+		}, treeCell.itemProperty()));
+		scopedExport.setOnAction(e -> {
+			final RunningJvm activeJvm = currentJvm.get();
+			if (activeJvm == null) {
+				return;
+			}
+			final PackageTreeNode packageTreeNode = treeCell.getItem();
+			if (packageTreeNode == null) {
+				return;
+			}
+			switch (packageTreeNode.getType()) {
+			case CLASSLOADER:
+				final File exportClassLoader = selectExportJarFile(packageTreeNode.getPackagePart(),
+				                                                   classes.getScene().getWindow());
+				if (exportClassLoader == null) {
+					return;
+				}
+				final ClassLoaderDescriptor classLoaderDescriptor = packageTreeNode.getClassLoaderDescriptor();
+				log.debug("Exporting class loader: {}", classLoaderDescriptor);
+				final List<LoadedClass> classesInClassLoader = getClassesInPackage("", classLoaderDescriptor);
+				executorService.submit(() -> export(exportClassLoader, classesInClassLoader, activeJvm));
+				break;
+			case PACKAGE:
+				final File exportPackage = selectExportJarFile(packageTreeNode.getPackagePart(),
+				                                               classes.getScene().getWindow());
+				if (exportPackage == null) {
+					return;
+				}
+				final String fullPackageName = getPackageName(treeCell.getTreeItem());
+				final ClassLoaderDescriptor packageClassLoader =
+						this.settings.getShowClassLoader().get() ? getPackageClassLoader(treeCell.getTreeItem()) :
+						null;
+				log.debug("Exporting package: {} in classloader: {}", fullPackageName, packageClassLoader);
+				final List<LoadedClass> classesInPackage = getClassesInPackage(fullPackageName, packageClassLoader);
+				executorService.submit(() -> export(exportPackage, classesInPackage, activeJvm));
+				break;
+			case CLASS:
+				final LoadedClass loadedClass = packageTreeNode.getLoadedClass();
+				final File selectedFile = selectExportClassFile(loadedClass.getSimpleName() + ".class",
+				                                                classes.getScene().getWindow());
+				if (selectedFile == null) {
+					return;
+				}
+				log.debug("Exporting class: {}", loadedClass);
+				executorService.submit(() -> export(selectedFile, loadedClass, activeJvm));
+				break;
+			}
+		});
+		return scopedExport;
+	}
+
+	private File selectImportJarFile(Window owner) {
+		final FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Replace Classes");
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JAR Files", "*.jar"));
+		return fileChooser.showOpenDialog(owner);
+	}
+
+	private File selectImportClassFile(Window owner) {
+		final FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Replace Class");
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Class Files", "*.class"));
+		return fileChooser.showOpenDialog(owner);
+	}
+
+	private String getPackageName(TreeItem<PackageTreeNode> packageNode) {
+		final List<String> packageParts = Stream.iterate(packageNode,
+		                                                 o -> o != null && o.getValue() != null
+		                                                      && o.getValue().getType() == PackageTreeNode.Type.PACKAGE,
+		                                                 TreeItem::getParent)
+		                                        .map(item -> item.getValue().getPackagePart())
+		                                        .collect(Collectors.toCollection(ArrayList::new));
+		Collections.reverse(packageParts);
+		return String.join(".", packageParts);
+	}
+
+	private List<LoadedClass> getClassesInPackage(String fullPackageName, ClassLoaderDescriptor packageClassLoader) {
+		return classesTreeRoot.streamVisible()
+		                      .filter(p -> p.getType() == PackageTreeNode.Type.CLASS)
+		                      .map(PackageTreeNode::getLoadedClass)
+		                      .filter(c -> c.getName().startsWith(fullPackageName))
+		                      .filter(c -> (packageClassLoader == null)
+		                                   || packageClassLoader.equals(c.getClassLoaderDescriptor()))
+		                      .collect(Collectors.toList());
+	}
+
+	private ClassLoaderDescriptor getPackageClassLoader(TreeItem<PackageTreeNode> packageNode) {
+		return Stream.iterate(packageNode, o -> o != null && o.getValue() != null, TreeItem::getParent)
+		             .map(TreeItem::getValue)
+		             .filter(p -> p.getType() == PackageTreeNode.Type.CLASSLOADER)
+		             .findFirst()
+		             .map(PackageTreeNode::getClassLoaderDescriptor)
+		             .orElse(null);
+	}
+
+	private File selectExportClassFile(String initialFileName, Window owner) {
+		final FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Export Class");
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Class Files", "*.class"));
+		fileChooser.setInitialFileName(initialFileName);
+		return fileChooser.showSaveDialog(owner);
+	}
+
+	private File selectExportJarFile(String initialFileName, Window owner) {
+		final FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Export Classes");
+		fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JAR Files", "*.jar"));
+		fileChooser.setInitialFileName(initialFileName);
+		return fileChooser.showSaveDialog(owner);
 	}
 
 	private void export(File selectedFile, LoadedClass loadedClass, RunningJvm activeJvm) {
@@ -263,7 +413,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 					return "Export " + (success.get() ? "succeeded" : "failed");
 				}
 				else {
-					return "Creating jar: " + progress.get() + " classes";
+					return "Creating JAR: " + progress.get() + " classes";
 				}
 			}, isComplete, success, progress);
 			alertHelper.showObservableInfo(titleText, contentText);
@@ -297,7 +447,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 		});
 	}
 
-	private void replaceClasses(File selectedFile, RunningJvm activeJvm) {
+	private void replaceClasses(File selectedFile, RunningJvm activeJvm, ClassLoaderDescriptor classLoaderDescriptor) {
 		final SimpleIntegerProperty progress = new SimpleIntegerProperty(0);
 		final SimpleBooleanProperty isComplete = new SimpleBooleanProperty(false);
 		final SimpleBooleanProperty success = new SimpleBooleanProperty(false);
@@ -318,6 +468,7 @@ public class ClassCellFactory implements Callback<TreeView<PackageTreeNode>, Tre
 		final boolean result = patchHelper.patch(selectedFile,
 		                                         activeJvm,
 		                                         clientHandler,
+		                                         classLoaderDescriptor,
 		                                         currentExportProgress -> Platform.runLater(() -> progress.set(
 				                                         currentExportProgress)));
 		Platform.runLater(() -> {

@@ -7,7 +7,6 @@ import javafx.scene.image.Image;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PackageTreeNode implements Comparable<PackageTreeNode> {
 
+	@Getter(AccessLevel.PRIVATE)
 	private final Map<String, PackageTreeNode> children = new HashMap<>();
 	private final LoadedClass loadedClass;
 	private final String packagePart;
@@ -52,6 +52,21 @@ public class PackageTreeNode implements Comparable<PackageTreeNode> {
 	public PackageTreeNode addClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
 		final String key = getKeyForClassLoader(classLoaderDescriptor);
 		return children.computeIfAbsent(key, k -> PackageTreeNode.ofClassLoader(classLoaderDescriptor));
+	}
+
+	// Mainly for debugging purposes
+	public String toDetailedString() {
+		return toDetailedString(0);
+	}
+
+	private String toDetailedString(int indent) {
+		final String nodeString = getType() + "-" + this;
+		final String childrenString = getChildren().entrySet()
+		                                           .stream()
+		                                           .map(e -> e.getKey() + "-" + e.getValue()
+		                                                                         .toDetailedString(indent + 1))
+		                                           .collect(Collectors.joining(",\n" + "\t".repeat(indent + 1)));
+		return nodeString + " [" + childrenString + "]";
 	}
 
 	@Override

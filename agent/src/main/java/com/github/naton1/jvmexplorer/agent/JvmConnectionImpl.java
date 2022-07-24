@@ -60,7 +60,8 @@ public class JvmConnectionImpl implements JvmConnection {
 	@Override
 	public ClassFields getFields(ClassFieldPath classFieldPath) {
 		final ClassLoader classLoader = classLoaderStore.lookup(classFieldPath.getClassLoaderDescriptor());
-		final ClassFields classFields = instrumentationHelper.getClassFields(classLoader, classFieldPath.getClassFieldKeys());
+		final ClassFields classFields = instrumentationHelper.getClassFields(classLoader,
+		                                                                     classFieldPath.getClassFieldKeys());
 		if (classFields == null) {
 			Log.warn("Failed to find fields: " + classFieldPath);
 			return new ClassFields(new ClassField[0]);

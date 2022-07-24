@@ -3,7 +3,6 @@ package com.github.naton1.jvmexplorer.agent;
 import com.esotericsoftware.minlog.Log;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldKey;
-import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
 import com.github.naton1.jvmexplorer.protocol.WrappedObject;
 import lombok.RequiredArgsConstructor;
@@ -138,10 +137,6 @@ public class InstrumentationHelper {
 		return null;
 	}
 
-	public Class<?> getClassByName(String name) {
-		return getClassByName(name, null);
-	}
-
 	public Class<?> getClassByName(String name, ClassLoader classLoader) {
 		try {
 			return Class.forName(name, false, classLoader != null ? classLoader : ClassLoader.getSystemClassLoader());
@@ -156,6 +151,10 @@ public class InstrumentationHelper {
 		}
 		Log.warn("Failed to find class by name: " + name);
 		return null;
+	}
+
+	public Class<?> getClassByName(String name) {
+		return getClassByName(name, null);
 	}
 
 	public ClassFields getClassFields(ClassLoader classLoader, ClassFieldKey[] classFieldPath) {

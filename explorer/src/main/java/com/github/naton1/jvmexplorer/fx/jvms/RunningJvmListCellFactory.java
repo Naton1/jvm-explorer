@@ -102,11 +102,11 @@ public class RunningJvmListCellFactory implements Callback<ListView<RunningJvm>,
 	}
 
 	private MenuItem createLaunchProcessMenuItem(ListView<RunningJvm> listView) {
-		final MenuItem launchProcessMenuItem = new MenuItem("Launch Jar");
+		final MenuItem launchProcessMenuItem = new MenuItem("Launch JAR");
 		launchProcessMenuItem.setOnAction(e -> {
 			final FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Launch Jar");
-			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Jar Files", "*.jar"));
+			fileChooser.setTitle("Launch JAR");
+			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JAR Files", "*.jar"));
 			final File selectedFile = fileChooser.showOpenDialog(listView.getScene().getWindow());
 			if (selectedFile == null) {
 				return;
@@ -129,7 +129,7 @@ public class RunningJvmListCellFactory implements Callback<ListView<RunningJvm>,
 			}
 			catch (IOException ex) {
 				Platform.runLater(() -> {
-					alertHelper.showError("Jar Launch Failed", "Failed to launch jar", ex);
+					alertHelper.showError("JAR Launch Failed", "Failed to launch JAR", ex);
 					this.currentJvm.set(null);
 				});
 			}

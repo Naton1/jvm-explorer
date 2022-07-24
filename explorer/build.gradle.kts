@@ -129,7 +129,7 @@ tasks {
             val process = processBuilder.start()
             val processEnded = process.waitFor(10L, TimeUnit.SECONDS)
             if (processEnded) {
-                throw GradleException("Jar process ended too soon")
+                throw GradleException("JAR process ended too soon")
             }
             process.destroy()
             val destroyed = process.waitFor(10L, TimeUnit.SECONDS)
