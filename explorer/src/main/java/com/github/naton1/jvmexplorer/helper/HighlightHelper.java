@@ -234,6 +234,7 @@ public class HighlightHelper {
 		patternMap.put("semicolon", ";");
 		patternMap.put("string", "\"([^\"\\\\]|\\\\.)*\"");
 		patternMap.put("comment", "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/");
+		patternMap.put("annotation", "@[a-zA-Z\\d\\.]+");
 		PATTERN_GROUPS = Collections.unmodifiableSet(patternMap.keySet());
 		PATTERN = Pattern.compile(patternMap.entrySet()
 		                                    .stream()
