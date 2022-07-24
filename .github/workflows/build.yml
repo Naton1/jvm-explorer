@@ -32,6 +32,12 @@ jobs:
             chmod +x gradlew
             ./gradlew integrationTest
 
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: "**/test-results/**/*.xml"
+
       - name: Run Headless Jar Health Test
         uses: GabrielBB/xvfb-action@v1.6
         with:
