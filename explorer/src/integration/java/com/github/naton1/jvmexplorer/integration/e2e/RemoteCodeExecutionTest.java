@@ -30,7 +30,7 @@ class RemoteCodeExecutionTest extends EndToEndTest {
 			final String simpleName = ClassNameHelper.getSimpleName(testJvm.getMainClassName());
 			fxRobotPlus.waitUntil(() -> fxRobotPlus.select(treeView, simpleName), 5000);
 			fxRobotPlus.selectContextMenu(treeView, "Run Code In Package");
-			fxRobotPlus.sleep(1000);
+			fxRobotPlus.waitForStageExists("Remote Code Executor.*");
 			fxRobotPlus.targetWindow("Remote Code Executor.*").clickOn("Execute Code");
 
 			final TextInputControl textArea = fxRobotPlus.targetWindow("Remote Code Executor.*")

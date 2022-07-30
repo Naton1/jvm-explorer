@@ -5,6 +5,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.stage.Stage;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.testfx.api.FxRobot;
@@ -22,8 +23,7 @@ public class FxRobotPlus extends FxRobot {
 	@Delegate
 	private final FxRobot fxRobot;
 
-	public <T> void selectContextMenu(ListView<T> listView, Predicate<T> cellSelector,
-	                                  String action) {
+	public <T> void selectContextMenu(ListView<T> listView, Predicate<T> cellSelector, String action) {
 		final ListCell<T> listCell = listView.lookupAll(".cell")
 		                                     .stream()
 		                                     .map(n -> (ListCell<T>) n)
@@ -31,6 +31,7 @@ public class FxRobotPlus extends FxRobot {
 		                                     .findFirst()
 		                                     .orElseThrow();
 		fxRobot.rightClickOn(listCell);
+		waitForExists(action);
 		fxRobot.clickOn(action);
 	}
 
@@ -43,6 +44,7 @@ public class FxRobotPlus extends FxRobot {
 		                                     .findFirst()
 		                                     .orElseThrow();
 		fxRobot.rightClickOn(treeCell);
+		waitForExists(action);
 		fxRobot.clickOn(action);
 	}
 
@@ -71,6 +73,18 @@ public class FxRobotPlus extends FxRobot {
 			next.addAll(nextTreeItem.getChildren());
 		}
 		return false;
+	}
+
+	public void waitForExists(String query) {
+		waitUntil(() -> fxRobot.lookup(query).tryQuery().isPresent(), 5000);
+	}
+
+	public void waitForStageExists(String titleRegex) {
+		waitUntil(() -> fxRobot.listWindows()
+		                       .stream()
+		                       .filter(Stage.class::isInstance)
+		                       .map(Stage.class::cast)
+		                       .anyMatch(w -> w.getTitle().matches(titleRegex)), 5000);
 	}
 
 	public <T> T waitFor(Supplier<T> supplier, long timeoutMs) throws RuntimeException {
