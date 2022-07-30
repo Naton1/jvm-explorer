@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.testfx.api.FxRobot;
+import org.testfx.util.WaitForAsyncUtils;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -30,9 +31,16 @@ public class FxRobotPlus extends FxRobot {
 		                                     .filter(cell -> cellSelector.test(cell.getItem()))
 		                                     .findFirst()
 		                                     .orElseThrow();
-		fxRobot.rightClickOn(listCell);
-		waitForExists(action);
-		fxRobot.clickOn(action);
+		WaitForAsyncUtils.waitForAsyncFx(5000,
+		                                 () -> listCell.getContextMenu()
+		                                               .getItems()
+		                                               .stream()
+		                                               .filter(m -> m.getText() != null && m.getText()
+		                                                                                    .startsWith(action))
+		                                               .findFirst()
+		                                               .orElseThrow()
+		                                               .getOnAction()
+		                                               .handle(null));
 	}
 
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
@@ -43,9 +51,16 @@ public class FxRobotPlus extends FxRobot {
 		                                     .filter(cell -> selected.getValue().equals(cell.getItem()))
 		                                     .findFirst()
 		                                     .orElseThrow();
-		fxRobot.rightClickOn(treeCell);
-		waitForExists(action);
-		fxRobot.clickOn(action);
+		WaitForAsyncUtils.waitForAsyncFx(5000,
+		                                 () -> treeCell.getContextMenu()
+		                                               .getItems()
+		                                               .stream()
+		                                               .filter(m -> m.getText() != null && m.getText()
+		                                                                                    .startsWith(action))
+		                                               .findFirst()
+		                                               .orElseThrow()
+		                                               .getOnAction()
+		                                               .handle(null));
 	}
 
 	public <T> boolean select(ListView<T> listView, String name) {
