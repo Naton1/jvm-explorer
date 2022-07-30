@@ -18,4 +18,5 @@
 
 .paragraph-text {
     -fx-line-spacing: 3;
+    -fx-tab-size: 4;
 }

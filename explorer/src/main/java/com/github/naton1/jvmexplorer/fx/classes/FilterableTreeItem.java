@@ -59,11 +59,16 @@ public class FilterableTreeItem<T> extends TreeItem<T> {
 	}
 
 	public Stream<T> streamVisible() {
+		return streamVisibleItems().map(TreeItem::getValue);
+	}
+
+	public Stream<FilterableTreeItem<T>> streamVisibleItems() {
 		return bfs(FilterableTreeItem::getChildren);
 	}
 
 	// Assumes all children are also FilterableTreeItems
-	private Stream<T> bfs(Function<FilterableTreeItem<T>, List<TreeItem<T>>> childFunction) {
+	// This does not incldue the current node
+	private Stream<FilterableTreeItem<T>> bfs(Function<FilterableTreeItem<T>, List<TreeItem<T>>> childFunction) {
 		final Queue<Supplier<Stream<FilterableTreeItem<T>>>> generations = new LinkedList<>();
 		generations.add(() -> childFunction.apply(this)
 		                                   .stream()
@@ -76,11 +81,14 @@ public class FilterableTreeItem<T> extends TreeItem<T> {
 		             .peek(n -> generations.add(() -> childFunction.apply(n)
 		                                                           .stream()
 		                                                           .filter(FilterableTreeItem.class::isInstance)
-		                                                           .map(FilterableTreeItem.class::cast)))
-		             .map(TreeItem::getValue);
+		                                                           .map(FilterableTreeItem.class::cast)));
 	}
 
 	public Stream<T> streamSource() {
+		return streamSourceItems().map(TreeItem::getValue);
+	}
+
+	public Stream<FilterableTreeItem<T>> streamSourceItems() {
 		return bfs(FilterableTreeItem::getSourceChildren);
 	}
 

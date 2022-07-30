@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class TreeHelper {
+public class FieldTreeHelper {
 
 	public ClassFieldKey[] getClassFieldKeyPath(TreeItem<ClassField> treeItemChild) {
 		final List<ClassFieldKey> classFieldKeys = new ArrayList<>();

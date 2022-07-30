@@ -15,4 +15,6 @@ public interface JvmConnection {
 
 	boolean redefineClass(LoadedClass loadedClass, byte[] bytes);
 
+	ExecutionResult executeCallable(String className, byte[] classFile, ClassLoaderDescriptor classLoaderDescriptor);
+
 }

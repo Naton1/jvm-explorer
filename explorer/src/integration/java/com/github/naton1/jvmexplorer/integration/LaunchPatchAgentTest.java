@@ -13,7 +13,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
-class TestLaunchPatchAgent {
+class LaunchPatchAgentTest {
 
 	// This is a sanity test to ensure we normally can't attach
 	@Test

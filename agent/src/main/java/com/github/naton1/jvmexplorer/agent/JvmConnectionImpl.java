@@ -7,15 +7,19 @@ import com.github.naton1.jvmexplorer.protocol.ClassField;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
+import com.github.naton1.jvmexplorer.protocol.ExecutionResult;
 import com.github.naton1.jvmexplorer.protocol.JvmClient;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.PacketType;
 import lombok.RequiredArgsConstructor;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 
@@ -92,6 +96,25 @@ public class JvmConnectionImpl implements JvmConnection {
 			return false;
 		}
 		return instrumentationHelper.redefineClass(klass, bytes);
+	}
+
+	@Override
+	public ExecutionResult executeCallable(String className, byte[] classFile,
+	                                       ClassLoaderDescriptor classLoaderDescriptor) {
+		final ClassLoader parentClassLoader = classLoaderStore.lookup(classLoaderDescriptor);
+		final ClassLoader classLoader = new SingleClassLoader(parentClassLoader, className, classFile);
+		try {
+			final Class<?> klass = classLoader.loadClass(className);
+			final Callable<Object> callable = (Callable<Object>) klass.getConstructor().newInstance();
+			return ExecutionResult.builder().success(true).message(String.valueOf(callable.call())).build();
+		}
+		catch (Throwable e) {
+			Log.warn("Failed to execute class", e);
+			final StringWriter stringWriter = new StringWriter();
+			final PrintWriter printWriter = new PrintWriter(stringWriter);
+			e.printStackTrace(printWriter);
+			return ExecutionResult.builder().success(false).message(stringWriter.toString()).build();
+		}
 	}
 
 	private void processLoadedClassPackets(PacketType packetType) {

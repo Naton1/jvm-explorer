@@ -6,11 +6,11 @@ import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class TreeHelperTest {
+class FieldTreeHelperTest {
 
 	@Test
 	void testGetClassFieldKeys() {
-		final TreeHelper treeHelper = new TreeHelper();
+		final FieldTreeHelper fieldTreeHelper = new FieldTreeHelper();
 
 		final TreeItem<ClassField> root = new TreeItem<>();
 		root.setValue(new ClassField(null, "a"));
@@ -36,7 +36,7 @@ class TreeHelperTest {
 		parent.getChildren().add(selectedField);
 		selectedField.getChildren().add(child);
 
-		final ClassFieldKey[] classFieldKeys = treeHelper.getClassFieldKeyPath(selectedField);
+		final ClassFieldKey[] classFieldKeys = fieldTreeHelper.getClassFieldKeyPath(selectedField);
 
 		final ClassFieldKey[] expected = { parentClassFieldKey, selectedClassFieldKey };
 

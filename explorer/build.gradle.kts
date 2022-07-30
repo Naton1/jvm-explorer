@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.github.naton1"
-version = "0.6.0"
+version = "0.7.0"
 
 repositories {
     mavenCentral()
@@ -66,6 +66,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")
     testImplementation("org.mockito:mockito-core:3.+")
+    testImplementation("org.mockito:mockito-junit-jupiter:3.12.4")
 }
 
 sourceSets {
@@ -86,6 +87,14 @@ sourceSets {
 configurations {
     val integrationImplementation by getting {
         extendsFrom(configurations.testImplementation.get())
+
+        // This is a super hack. Try to find something better to add :agent as a dependency.
+        withDependencies {
+            val dependencySet = this
+            dependencies {
+                dependencySet.add(project(":agent"))
+            }
+        }
     }
 }
 
@@ -117,6 +126,11 @@ tasks {
     }
     jacocoTestReport {
         dependsOn(test)
+        classDirectories.setFrom(
+                sourceSets.main.get().output.asFileTree.matching {
+                    include("**/com/github/naton1/jvmexplorer/**")
+                }
+        )
     }
     val verifyJarStarts by creating {
         group = "verification"

@@ -51,14 +51,14 @@ public class LoadedClassesController {
 
 	private final ClassTreeHelper classTreeHelper = new ClassTreeHelper();
 	private final AgentPreparer agentPreparer = new AgentPreparer();
-	private final FilterableTreeItem<PackageTreeNode> classesTreeRoot = new FilterableTreeItem<>();
+	private final FilterableTreeItem<ClassTreeNode> classesTreeRoot = new FilterableTreeItem<>();
 	private final SimpleIntegerProperty loadedClassProgressCount = new SimpleIntegerProperty(CLASSES_NOT_LOADING);
 	private final SimpleObjectProperty<ClassContent> currentClass = new SimpleObjectProperty<>();
 	private final FilterHelper filterHelper = new FilterHelper();
 	private final SimpleBooleanProperty agentLoading = new SimpleBooleanProperty();
 
 	@FXML
-	private TreeView<PackageTreeNode> classes;
+	private TreeView<ClassTreeNode> classes;
 
 	@FXML
 	private TextField searchClasses;
@@ -106,7 +106,7 @@ public class LoadedClassesController {
 			final Predicate<String> predicate = filterHelper.createStringPredicate(text);
 			return t -> {
 				// We are only searching classes here. A node will stay visible if any of its children are.
-				if (t.getType() == PackageTreeNode.Type.CLASS) {
+				if (t.getType() == ClassTreeNode.Type.CLASS) {
 					return predicate.test(t.getLoadedClass().toString());
 				}
 				return false;
@@ -150,7 +150,7 @@ public class LoadedClassesController {
 		return AgentConfiguration.builder()
 		                         .hostName("localhost")
 		                         .port(serverPort)
-		                         .identifier(runningJvm.getId() + ":" + runningJvm.getName())
+		                         .identifier(runningJvm.toIdentifier())
 		                         .logLevel(Log.LEVEL_DEBUG)
 		                         .logFilePath(AGENT_LOG_FILE.getAbsolutePath())
 		                         .build()
@@ -169,7 +169,6 @@ public class LoadedClassesController {
 		                                            clientHandler,
 		                                            classesTreeRoot,
 		                                            exportHelper,
-		                                            jvmLoaded,
 		                                            this::loadClasses,
 		                                            settings));
 	}
@@ -198,7 +197,7 @@ public class LoadedClassesController {
 		classes.setSkin(treeViewPlaceholderSkin);
 	}
 
-	private void onSelectedClassChange(TreeItem<PackageTreeNode> old, TreeItem<PackageTreeNode> newv) {
+	private void onSelectedClassChange(TreeItem<ClassTreeNode> old, TreeItem<ClassTreeNode> newv) {
 		if (newv == null) {
 			currentClass.setValue(null);
 			return;
@@ -263,15 +262,15 @@ public class LoadedClassesController {
 			return;
 		}
 		log.debug("Received loaded classes for {}", runningJvm);
-		final PackageTreeNode packageTreeRoot = buildPackageTree(loadedClasses);
+		final ClassTreeNode classTreeRoot = buildClassTree(loadedClasses);
 		Platform.runLater(() -> {
-			final FilterableTreeItem<PackageTreeNode> root = packageTreeRoot.toTreeItem();
+			final FilterableTreeItem<ClassTreeNode> root = classTreeRoot.toTreeItem();
 			classesTreeRoot.getSourceChildren().setAll(root.getSourceChildren());
 			loadedClassProgressCount.set(CLASSES_NOT_LOADING);
 		});
 	}
 
-	private PackageTreeNode buildPackageTree(List<LoadedClass> loadedClasses) {
+	private ClassTreeNode buildClassTree(List<LoadedClass> loadedClasses) {
 		if (this.settings.getShowClassLoader().get()) {
 			return classTreeHelper.buildClassLoaderTree(loadedClasses);
 		}

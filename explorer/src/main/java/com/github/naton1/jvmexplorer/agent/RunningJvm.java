@@ -66,4 +66,8 @@ public class RunningJvm {
 		return name + ": " + id;
 	}
 
+	public String toIdentifier() {
+		return getId() + ":" + getName();
+	}
+
 }

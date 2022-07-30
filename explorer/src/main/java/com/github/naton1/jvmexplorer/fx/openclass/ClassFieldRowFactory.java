@@ -3,7 +3,7 @@ package com.github.naton1.jvmexplorer.fx.openclass;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.EditorHelper;
-import com.github.naton1.jvmexplorer.helper.TreeHelper;
+import com.github.naton1.jvmexplorer.helper.FieldTreeHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 @RequiredArgsConstructor
 public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>, TreeTableRow<ClassField>> {
 
-	private final TreeHelper treeHelper = new TreeHelper();
+	private final FieldTreeHelper fieldTreeHelper = new FieldTreeHelper();
 
 	private final EditorHelper editorHelper;
 	private final ExecutorService executorService;
@@ -71,7 +71,7 @@ public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>,
 	}
 
 	private void edit(RunningJvm selectedJvm, TreeItem<ClassField> classField, String newValue) {
-		final ClassFieldKey[] classFieldKeys = treeHelper.getClassFieldKeyPath(classField);
+		final ClassFieldKey[] classFieldKeys = fieldTreeHelper.getClassFieldKeyPath(classField);
 		final Object resultObject = editorHelper.edit(classField.getValue().getClassFieldKey().getTypeName(),
 		                                              newValue);
 		final ClassLoaderDescriptor currentClassLoader =

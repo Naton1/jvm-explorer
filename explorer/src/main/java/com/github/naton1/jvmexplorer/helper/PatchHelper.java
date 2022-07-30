@@ -26,7 +26,7 @@ public class PatchHelper {
 					final String name = classFile.getName().replace('/', '.').replace(".class", "");
 					log.debug("Patching {}", name);
 					final byte[] classContents = jar.getInputStream(classFile).readAllBytes();
-					// We don't know the classloader, so pass in null for it to find the first match
+					// Note - we may not always want to pass in the class loader. It could be in a child classloader.
 					final LoadedClass loadedClass = new LoadedClass(name, classLoaderDescriptor);
 					final boolean replaced = clientHandler.replaceClass(runningJvm, loadedClass, classContents);
 					if (!replaced) {

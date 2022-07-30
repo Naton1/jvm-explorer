@@ -5,9 +5,9 @@ import com.github.naton1.jvmexplorer.bytecode.AsmDisassembler;
 import com.github.naton1.jvmexplorer.bytecode.BytecodeTextifier;
 import com.github.naton1.jvmexplorer.bytecode.QuiltflowerDecompiler;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
+import com.github.naton1.jvmexplorer.helper.CodeAreaHelper;
 import com.github.naton1.jvmexplorer.helper.EditorHelper;
-import com.github.naton1.jvmexplorer.helper.HighlightHelper;
-import com.github.naton1.jvmexplorer.helper.TreeHelper;
+import com.github.naton1.jvmexplorer.helper.FieldTreeHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
@@ -20,30 +20,19 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
-import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.LineNumberFactory;
-import org.fxmisc.richtext.model.StyleSpans;
 
 import java.lang.reflect.Modifier;
-import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -55,9 +44,8 @@ public class CurrentClassController {
 	private static final String NO_CLASS_FILE_OPEN = "Select a loaded class to open";
 	private static final String PROCESSOR_FAILED = "Processor failed";
 
-	private final HighlightHelper highlightHelper = new HighlightHelper();
 	private final EditorHelper editorHelper = new EditorHelper();
-	private final TreeHelper treeHelper = new TreeHelper();
+	private final FieldTreeHelper fieldTreeHelper = new FieldTreeHelper();
 
 	@FXML
 	private CodeArea bytecode;
@@ -90,6 +78,8 @@ public class CurrentClassController {
 	private ClientHandler clientHandler;
 	private AlertHelper alertHelper;
 
+	private CodeAreaHelper codeAreaHelper;
+
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
 	                       ObjectProperty<RunningJvm> currentJvm, ObjectProperty<ClassContent> currentClass) {
 		this.executorService = executorService;
@@ -97,6 +87,7 @@ public class CurrentClassController {
 		this.currentJvm = currentJvm;
 		this.currentClass = currentClass;
 		this.alertHelper = new AlertHelper(stage);
+		this.codeAreaHelper = new CodeAreaHelper(executorService);
 		initialize();
 	}
 
@@ -176,8 +167,7 @@ public class CurrentClassController {
 				// sometimes the text area wasn't scrolling to 0 by default, so let's tell it to no matter what
 				codeArea.scrollYToPixel(0);
 				// Trigger update immediately
-				final Task<StyleSpans<Collection<String>>> initialTask = computeHighlighting(codeArea);
-				initialTask.setOnSucceeded(e -> applyHighlighting(codeArea, initialTask.getValue()));
+				codeAreaHelper.triggerHighlightUpdate(codeArea);
 			});
 		});
 	}
@@ -254,10 +244,8 @@ public class CurrentClassController {
 		return classField.getValue();
 	}
 
+	// CodeArea must be in a VBox to replace and insert into VirtualizedScrollPane
 	private void setupCodeArea(CodeArea codeArea) {
-		codeArea.getStylesheets()
-		        .setAll(Objects.requireNonNull(getClass().getClassLoader().getResource("css/code-area.css"))
-		                       .toExternalForm());
 		codeArea.setEditable(false);
 		final Label placeholderLabel = new Label();
 		placeholderLabel.textProperty()
@@ -269,44 +257,7 @@ public class CurrentClassController {
 		        .bind(Bindings.createBooleanBinding(() -> codeArea.getText().isEmpty(), codeArea.textProperty()));
 		codeArea.focusTraversableProperty()
 		        .bind(Bindings.createBooleanBinding(() -> !codeArea.getText().isEmpty(), codeArea.textProperty()));
-		// Hack to insert the scroll pane. SceneBuilder wasn't picking it up.
-		final VBox parent = (VBox) codeArea.getParent();
-		parent.getChildren().remove(codeArea);
-		final Node scrollPane = new VirtualizedScrollPane<>(codeArea);
-		parent.getChildren().add(scrollPane);
-		VBox.setVgrow(scrollPane, Priority.ALWAYS);
-		codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
-		codeArea.multiPlainChanges()
-		        .successionEnds(Duration.ofMillis(500))
-		        .retainLatestUntilLater(executorService)
-		        .supplyTask(() -> computeHighlighting(codeArea))
-		        .awaitLatest(codeArea.multiPlainChanges())
-		        .filterMap(t -> {
-			        if (t.isSuccess()) {
-				        return Optional.of(t.get());
-			        }
-			        else {
-				        log.warn("Failed to compute highlighting", t.getFailure());
-				        return Optional.empty();
-			        }
-		        })
-		        .subscribe(highlighting -> applyHighlighting(codeArea, highlighting));
-	}
-
-	private Task<StyleSpans<Collection<String>>> computeHighlighting(CodeArea codeArea) {
-		final String text = codeArea.getText();
-		final Task<StyleSpans<Collection<String>>> task = new Task<>() {
-			@Override
-			protected StyleSpans<Collection<String>> call() {
-				return highlightHelper.computeHighlighting(text);
-			}
-		};
-		executorService.execute(task);
-		return task;
-	}
-
-	private void applyHighlighting(CodeArea codeArea, StyleSpans<Collection<String>> highlighting) {
-		codeArea.setStyleSpans(0, highlighting);
+		codeAreaHelper.initializeJavaEditor(codeArea);
 	}
 
 	private void loadChildren(TreeItem<ClassField> parent, ClassFields classFields) {
@@ -332,7 +283,7 @@ public class CurrentClassController {
 				if (selectedJvm == null) {
 					return;
 				}
-				final ClassFieldKey[] classFieldKeys = treeHelper.getClassFieldKeyPath(treeItem);
+				final ClassFieldKey[] classFieldKeys = fieldTreeHelper.getClassFieldKeyPath(treeItem);
 				final ClassLoaderDescriptor classLoaderDescriptor = currentClass.get()
 				                                                                .getLoadedClass()
 				                                                                .getClassLoaderDescriptor();

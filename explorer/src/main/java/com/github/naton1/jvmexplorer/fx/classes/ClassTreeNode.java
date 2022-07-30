@@ -19,39 +19,39 @@ import java.util.stream.Collectors;
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
-public class PackageTreeNode implements Comparable<PackageTreeNode> {
+public class ClassTreeNode implements Comparable<ClassTreeNode> {
 
 	@Getter(AccessLevel.PRIVATE)
-	private final Map<String, PackageTreeNode> children = new HashMap<>();
+	private final Map<String, ClassTreeNode> children = new HashMap<>();
 	private final LoadedClass loadedClass;
-	private final String packagePart;
+	private final String packageSegment;
 	private final ClassLoaderDescriptor classLoaderDescriptor;
 
-	public FilterableTreeItem<PackageTreeNode> toTreeItem() {
-		final FilterableTreeItem<PackageTreeNode> treeItem = new FilterableTreeItem<>(this);
+	public FilterableTreeItem<ClassTreeNode> toTreeItem() {
+		final FilterableTreeItem<ClassTreeNode> treeItem = new FilterableTreeItem<>(this);
 		children.forEach((key, value) -> treeItem.getSourceChildren().add(value.toTreeItem()));
 		treeItem.getSourceChildren().sort(Comparator.comparing(TreeItem::getValue));
 		return treeItem;
 	}
 
-	public PackageTreeNode addPackage(String name) {
+	public ClassTreeNode addPackage(String name) {
 		final String key = getKeyForPackage(name);
-		return children.computeIfAbsent(key, k -> PackageTreeNode.ofPackage(name));
+		return children.computeIfAbsent(key, k -> ClassTreeNode.ofPackage(name));
 	}
 
-	public PackageTreeNode addClass(LoadedClass loadedClass) {
+	public ClassTreeNode addClass(LoadedClass loadedClass) {
 		final String key = getKeyForClass(loadedClass);
-		final PackageTreeNode classNode = PackageTreeNode.ofClass(loadedClass);
-		final PackageTreeNode previous = children.put(key, classNode);
+		final ClassTreeNode classNode = ClassTreeNode.ofClass(loadedClass);
+		final ClassTreeNode previous = children.put(key, classNode);
 		if (previous != null) {
 			log.warn("Loaded duplicate class: {}", loadedClass);
 		}
 		return classNode;
 	}
 
-	public PackageTreeNode addClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
+	public ClassTreeNode addClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
 		final String key = getKeyForClassLoader(classLoaderDescriptor);
-		return children.computeIfAbsent(key, k -> PackageTreeNode.ofClassLoader(classLoaderDescriptor));
+		return children.computeIfAbsent(key, k -> ClassTreeNode.ofClassLoader(classLoaderDescriptor));
 	}
 
 	// Mainly for debugging purposes
@@ -71,14 +71,14 @@ public class PackageTreeNode implements Comparable<PackageTreeNode> {
 
 	@Override
 	public String toString() {
-		return packagePart;
+		return packageSegment;
 	}
 
 	@Override
-	public int compareTo(PackageTreeNode o) {
+	public int compareTo(ClassTreeNode o) {
 		// ClassLoader > Package > Class, then compare displayName
-		return Comparator.<PackageTreeNode>comparingInt(node -> node.getType().ordinal())
-		                 .thenComparing(PackageTreeNode::getPackagePart)
+		return Comparator.<ClassTreeNode>comparingInt(node -> node.getType().ordinal())
+		                 .thenComparing(ClassTreeNode::getPackageSegment)
 		                 .compare(this, o);
 	}
 
@@ -105,32 +105,32 @@ public class PackageTreeNode implements Comparable<PackageTreeNode> {
 		}
 	}
 
-	public static PackageTreeNode root() {
-		return new PackageTreeNode(null, null, null);
+	public static ClassTreeNode root() {
+		return new ClassTreeNode(null, null, null);
 	}
 
-	private static PackageTreeNode ofClass(LoadedClass loadedClass) {
-		return new PackageTreeNode(loadedClass, loadedClass.getSimpleName(), null);
+	private static ClassTreeNode ofClass(LoadedClass loadedClass) {
+		return new ClassTreeNode(loadedClass, loadedClass.getSimpleName(), null);
 	}
 
-	private static PackageTreeNode ofPackage(String packagePart) {
-		return new PackageTreeNode(null, packagePart, null);
+	private static ClassTreeNode ofPackage(String packagePart) {
+		return new ClassTreeNode(null, packagePart, null);
 	}
 
-	private static PackageTreeNode ofClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
-		return new PackageTreeNode(null, classLoaderDescriptor.getSimpleClassName(), classLoaderDescriptor);
+	private static ClassTreeNode ofClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
+		return new ClassTreeNode(null, classLoaderDescriptor.getSimpleClassName(), classLoaderDescriptor);
 	}
 
 	private String getKeyForClass(LoadedClass loadedClass) {
-		return PackageTreeNode.Type.CLASS.name() + ":" + loadedClass.getSimpleName();
+		return ClassTreeNode.Type.CLASS.name() + ":" + loadedClass.getSimpleName();
 	}
 
 	private String getKeyForPackage(String packagePart) {
-		return PackageTreeNode.Type.PACKAGE.name() + ":" + packagePart;
+		return ClassTreeNode.Type.PACKAGE.name() + ":" + packagePart;
 	}
 
 	private String getKeyForClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
-		return PackageTreeNode.Type.CLASSLOADER.name() + ":" + classLoaderDescriptor.getId();
+		return ClassTreeNode.Type.CLASSLOADER.name() + ":" + classLoaderDescriptor.getId();
 	}
 
 }

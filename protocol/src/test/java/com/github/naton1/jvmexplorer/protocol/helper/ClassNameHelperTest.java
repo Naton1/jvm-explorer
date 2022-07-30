@@ -33,4 +33,28 @@ public class ClassNameHelperTest {
 		Assert.assertEquals("", simpleName);
 	}
 
+	@Test
+	public void testPackageName() {
+		final String packageName = ClassNameHelper.getPackageName("my.c.MyClass");
+		Assert.assertEquals("my.c", packageName);
+	}
+
+	@Test
+	public void testEmptyPackage() {
+		final String packageName = ClassNameHelper.getPackageName("MyClass");
+		Assert.assertEquals("", packageName);
+	}
+
+	@Test
+	public void testEmptyString() {
+		final String packageName = ClassNameHelper.getPackageName("");
+		Assert.assertEquals("", packageName);
+	}
+
+	@Test
+	public void testPackageEndsWithDot() {
+		final String packageName = ClassNameHelper.getPackageName("mypackage.");
+		Assert.assertEquals("mypackage", packageName);
+	}
+
 }

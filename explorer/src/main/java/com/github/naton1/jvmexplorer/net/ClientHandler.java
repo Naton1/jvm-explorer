@@ -6,6 +6,8 @@ import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
+import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
+import com.github.naton1.jvmexplorer.protocol.ExecutionResult;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.PacketType;
@@ -72,6 +74,14 @@ public class ClientHandler extends Listener {
 	public boolean replaceClass(RunningJvm runningJvm, LoadedClass loadedClass, byte[] bytes) {
 		return getJvmConnection(runningJvm).map(jvmConnection -> jvmConnection.redefineClass(loadedClass, bytes))
 		                                   .orElse(false);
+	}
+
+	public ExecutionResult executeCallable(RunningJvm runningJvm, String className, byte[] classFile,
+	                                       ClassLoaderDescriptor classLoaderDescriptor) {
+		return getJvmConnection(runningJvm).map(jvmConnection -> jvmConnection.executeCallable(className,
+		                                                                                       classFile,
+		                                                                                       classLoaderDescriptor))
+		                                   .orElse(null);
 	}
 
 	@Override

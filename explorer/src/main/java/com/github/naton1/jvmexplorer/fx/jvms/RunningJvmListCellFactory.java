@@ -4,6 +4,7 @@ import com.github.naton1.jvmexplorer.agent.AgentException;
 import com.github.naton1.jvmexplorer.agent.AgentPreparer;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
+import com.github.naton1.jvmexplorer.helper.FileHelper;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
@@ -15,7 +16,6 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import lombok.RequiredArgsConstructor;
 
@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 public class RunningJvmListCellFactory implements Callback<ListView<RunningJvm>, ListCell<RunningJvm>> {
 
 	private final AgentPreparer agentPreparer = new AgentPreparer();
+	private final FileHelper fileHelper = new FileHelper();
 
 	private final ExecutorService executorService;
 	private final AlertHelper alertHelper;
@@ -104,10 +105,7 @@ public class RunningJvmListCellFactory implements Callback<ListView<RunningJvm>,
 	private MenuItem createLaunchProcessMenuItem(ListView<RunningJvm> listView) {
 		final MenuItem launchProcessMenuItem = new MenuItem("Launch JAR");
 		launchProcessMenuItem.setOnAction(e -> {
-			final FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Launch JAR");
-			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("JAR Files", "*.jar"));
-			final File selectedFile = fileChooser.showOpenDialog(listView.getScene().getWindow());
+			final File selectedFile = fileHelper.openJar(listView.getScene().getWindow(), "Launch JAR");
 			if (selectedFile == null) {
 				return;
 			}

@@ -14,12 +14,45 @@ JVM Explorer is a Java desktop application for browsing loaded class files insid
 * View classloader hierarchy
 * View decompiled bytecode
 * View disassembled bytecode
+* Execute code in local JVMs
 * Export loaded classes to a JAR file
 * Browse the state of all static variables in a class (and their nested fields)
 * Modify the state of static variables (and their nested fields)
 * Replace class file definitions
 * View system properties of running JVMs
 * Run JAR files with a patched `ProcessBuilder` to remove any `-XX:+DisableAttachMechanism` argument
+
+### Demos
+
+<details>
+  <summary>Browse Classes And Fields</summary>
+
+![Browse Classes Example](assets/browse-classes.gif)
+</details>
+
+<details>
+  <summary>Execute Code In Remote JVM</summary>
+
+![Execute Code Example](assets/execute-code.gif)
+</details>
+
+<details>
+  <summary>Show Class Loader Hierarchy</summary>
+
+![Class Loader Hierarchy Example](assets/show-classloaders.gif)
+</details>
+
+<details>
+  <summary>Launch Jar With Patched ProcessBuilder</summary>
+
+![Launch Patched Jar Example](assets/launch-patched-jar.gif)
+</details>
+
+<details>
+  <summary>Export Classes In Package</summary>
+
+![Export Classes Example](assets/export-package.gif)
+</details>
 
 ## Getting Started
 
@@ -31,7 +64,7 @@ intended to run on Java 11+ and can attach to JVMs running Java 7+.
 1) Download the jvm-explorer JAR file from [the latest release](https://github.com/naton1/jvm-explorer/releases/latest)
 2) Run with at least Java 11
 
-### Build and run:
+### Build And Run:
 
 1) Clone with Git
 
@@ -71,7 +104,6 @@ Note: this uses the Java Attach API, so any limitations that come with that will
 * Multiple decompilers
 * Inserting code (compile java code)
 * Editing bytecode
-* Execute code in attached JVM via JShell
 * Tabs/open multiple classes
 * Search code
 * Detect changes between current classes and previous classes

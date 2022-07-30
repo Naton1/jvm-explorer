@@ -11,4 +11,12 @@ public class ClassNameHelper {
 		return name.substring(name.lastIndexOf('.') + 1);
 	}
 
+	public static String getPackageName(String name) {
+		final int lastIndex = name.lastIndexOf('.');
+		if (lastIndex == -1) {
+			return "";
+		}
+		return name.substring(0, lastIndex);
+	}
+
 }

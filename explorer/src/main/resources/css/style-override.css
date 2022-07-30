@@ -1,3 +1,4 @@
+/* Remove unnecessary padding in main window */
 .titled-pane > .content > AnchorPane,
 .titled-pane > .content > BorderPane,
 .titled-pane > .content > FlowPane,
@@ -10,6 +11,14 @@
     -fx-padding: 0.0em !important;
 }
 
+/* Remove alternating colors on tables/lists */
 .root {
     -fx-control-inner-background-alt: -fx-control-inner-background;
+}
+
+/* Remove unnecessary padding in remote code executor dialog */
+.custom-dialog-pane > .content,
+.custom-dialog-pane > .content > .VBox,
+.custom-dialog-pane > .button-bar > .container {
+    -fx-padding: 0 !important;
 }
