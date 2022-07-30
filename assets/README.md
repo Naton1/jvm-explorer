@@ -1,0 +1,1 @@
+This directory contains assets displayed in the root README.md

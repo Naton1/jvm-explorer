@@ -31,10 +31,7 @@ class RemoteCodeExecutionTest extends EndToEndTest {
 			fxRobotPlus.waitUntil(() -> fxRobotPlus.select(treeView, simpleName), 5000);
 			fxRobotPlus.selectContextMenu(treeView, "Run Code In Package");
 			fxRobotPlus.waitForStageExists("Remote Code Executor.*");
-			fxRobotPlus.targetWindow("Remote Code Executor.*").lookup("Execute Code")
-					.queryButton()
-					.getOnAction()
-					.handle(null);
+			fxRobotPlus.targetWindow("Remote Code Executor.*").lookup("Execute Code").queryButton().fire();
 
 			final TextInputControl textArea = fxRobotPlus.targetWindow("Remote Code Executor.*")
 			                                             .lookup(TextArea.class::isInstance)
