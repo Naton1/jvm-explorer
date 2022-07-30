@@ -27,11 +27,15 @@ JVM Explorer is a Java desktop application for browsing loaded class files insid
 <details>
   <summary>Browse Classes And Fields</summary>
 
+<br/>
+
 ![Browse Classes Example](assets/browse-classes.gif)
 </details>
 
 <details>
   <summary>Execute Code In Remote JVM</summary>
+
+<br/>
 
 ![Execute Code Example](assets/execute-code.gif)
 </details>
@@ -39,17 +43,23 @@ JVM Explorer is a Java desktop application for browsing loaded class files insid
 <details>
   <summary>Show Class Loader Hierarchy</summary>
 
+<br/>
+
 ![Class Loader Hierarchy Example](assets/show-classloaders.gif)
 </details>
 
 <details>
   <summary>Launch Jar With Patched ProcessBuilder</summary>
 
+<br/>
+
 ![Launch Patched Jar Example](assets/launch-patched-jar.gif)
 </details>
 
 <details>
   <summary>Export Classes In Package</summary>
+
+<br/>
 
 ![Export Classes Example](assets/export-package.gif)
 </details>
