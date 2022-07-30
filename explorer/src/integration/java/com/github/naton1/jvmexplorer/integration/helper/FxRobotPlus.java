@@ -1,4 +1,4 @@
-package com.github.naton1.jvmexplorer.integration;
+package com.github.naton1.jvmexplorer.integration.helper;
 
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;

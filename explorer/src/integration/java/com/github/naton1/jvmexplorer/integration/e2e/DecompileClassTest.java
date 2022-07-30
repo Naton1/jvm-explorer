@@ -1,6 +1,6 @@
 package com.github.naton1.jvmexplorer.integration.e2e;
 
-import com.github.naton1.jvmexplorer.integration.FxRobotPlus;
+import com.github.naton1.jvmexplorer.integration.helper.FxRobotPlus;
 import com.github.naton1.jvmexplorer.integration.helper.TestJvm;
 import com.github.naton1.jvmexplorer.integration.programs.SleepForeverProgram;
 import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;

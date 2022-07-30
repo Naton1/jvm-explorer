@@ -10,6 +10,7 @@ import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.util.WaitForAsyncUtils;
 
 @ExtendWith(ApplicationExtension.class)
+@ExtendWith(ScreenshotRule.class)
 @Slf4j
 abstract class EndToEndTest {
 

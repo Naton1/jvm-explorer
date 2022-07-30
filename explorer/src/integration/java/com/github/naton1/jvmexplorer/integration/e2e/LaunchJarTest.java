@@ -4,7 +4,7 @@ import com.github.naton1.jvmexplorer.JarTestHelper;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.agent.RunningJvmLoader;
 import com.github.naton1.jvmexplorer.helper.FileHelper;
-import com.github.naton1.jvmexplorer.integration.FxRobotPlus;
+import com.github.naton1.jvmexplorer.integration.helper.FxRobotPlus;
 import com.github.naton1.jvmexplorer.integration.programs.SleepForeverProgram;
 import javafx.scene.control.ListView;
 import org.junit.jupiter.api.Test;

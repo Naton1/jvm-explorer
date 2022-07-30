@@ -67,6 +67,9 @@ dependencies {
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")
     testImplementation("org.mockito:mockito-core:3.+")
     testImplementation("org.mockito:mockito-junit-jupiter:3.12.4")
+
+    // Allows screenshots
+    testImplementation("org.openjfx:javafx-swing:${javafx.version}:${JavaFXPlatform.detect(project).classifier}")
 }
 
 sourceSets {
