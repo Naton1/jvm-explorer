@@ -7,12 +7,33 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxToolkit;
 import org.testfx.framework.junit5.ApplicationExtension;
+import org.testfx.util.DebugUtils;
 import org.testfx.util.WaitForAsyncUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicInteger;
+
 @ExtendWith(ApplicationExtension.class)
-@ExtendWith(ScreenshotRule.class)
 @Slf4j
 abstract class EndToEndTest {
+
+	private static final AtomicInteger testNumber = new AtomicInteger();
+	private static final Path SCREENSHOT_DIR = Paths.get("integration-test-screenshots");
+
+	static {
+		SCREENSHOT_DIR.toFile().mkdirs();
+		try {
+			for (Path path : Files.newDirectoryStream(SCREENSHOT_DIR, f -> f.toFile().isFile())) {
+				Files.delete(path);
+			}
+		}
+		catch (IOException e) {
+			log.warn("Failed to clean up screenshot dir", e);
+		}
+	}
 
 	@BeforeEach
 	void setup() throws Exception {
@@ -25,8 +46,15 @@ abstract class EndToEndTest {
 
 	@AfterEach
 	void teardown() throws Exception {
+		final StringBuilder debugInfo = DebugUtils.saveScreenshot(this::getScreenshotPath, "   ")
+		                                          .apply(new StringBuilder());
+		log.info(debugInfo.toString());
 		log.debug("Tearing down test");
 		FxToolkit.cleanupStages();
+	}
+
+	private Path getScreenshotPath() {
+		return SCREENSHOT_DIR.resolve(getClass().getName() + " - " + testNumber.incrementAndGet() + ".png");
 	}
 
 }
