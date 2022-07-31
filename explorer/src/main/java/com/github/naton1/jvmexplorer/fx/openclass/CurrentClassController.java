@@ -1,8 +1,11 @@
 package com.github.naton1.jvmexplorer.fx.openclass;
 
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
-import com.github.naton1.jvmexplorer.bytecode.AsmDisassembler;
+import com.github.naton1.jvmexplorer.bytecode.Assembler;
+import com.github.naton1.jvmexplorer.bytecode.AssemblyException;
 import com.github.naton1.jvmexplorer.bytecode.BytecodeTextifier;
+import com.github.naton1.jvmexplorer.bytecode.JasmAssembler;
+import com.github.naton1.jvmexplorer.bytecode.JasmDisassembler;
 import com.github.naton1.jvmexplorer.bytecode.QuiltflowerDecompiler;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.CodeAreaHelper;
@@ -15,20 +18,32 @@ import com.github.naton1.jvmexplorer.protocol.ClassFieldKey;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
+import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.WrappedObject;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
+import org.fxmisc.wellbehaved.event.EventPattern;
+import org.fxmisc.wellbehaved.event.InputMap;
+import org.fxmisc.wellbehaved.event.Nodes;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -36,6 +51,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,6 +62,9 @@ public class CurrentClassController {
 
 	private final EditorHelper editorHelper = new EditorHelper();
 	private final FieldTreeHelper fieldTreeHelper = new FieldTreeHelper();
+
+	private final SimpleStringProperty decompiledClass = new SimpleStringProperty();
+	private final SimpleStringProperty disassembledClass = new SimpleStringProperty();
 
 	@FXML
 	private CodeArea bytecode;
@@ -70,6 +89,9 @@ public class CurrentClassController {
 
 	@FXML
 	private TitledPane loadedClassTitlePane;
+
+	@FXML
+	private Tab bytecodeTab;
 
 	private ObjectProperty<RunningJvm> currentJvm;
 	private ObjectProperty<ClassContent> currentClass;
@@ -99,8 +121,90 @@ public class CurrentClassController {
 
 		setupClassFieldTree();
 
-		setupCodeArea(classFile);
-		setupCodeArea(bytecode);
+		setupCodeArea(classFile, false);
+		setupCodeArea(bytecode, true);
+
+		setupBytecodeEditor();
+	}
+
+	private void setupBytecodeEditor() {
+
+		final BooleanBinding bytecodeModified = Bindings.createBooleanBinding(() -> {
+			if (currentClass.get() == null) {
+				return false;
+			}
+			if (bytecode.getText().equals(PROCESSOR_FAILED)) {
+				return false;
+			}
+			final String baseDisassembledClass = disassembledClass.get();
+			if (baseDisassembledClass == null) {
+				return false;
+			}
+			// Normalize line endings
+			final List<String> editorText = bytecode.getText().lines().collect(Collectors.toList());
+			final List<String> baseLines = baseDisassembledClass.lines().collect(Collectors.toList());
+			return !editorText.equals(baseLines);
+		}, bytecode.textProperty(), disassembledClass, currentClass);
+
+		bytecodeTab.textProperty()
+		           .bind(Bindings.createStringBinding(() -> "Bytecode" + (bytecodeModified.get() ? "*" : ""),
+		                                              bytecodeModified));
+
+		final ContextMenu contextMenu = new ContextMenu();
+
+		final MenuItem save = new MenuItem("Save Changes");
+		save.disableProperty().bind(bytecodeModified.not());
+
+		save.setOnAction(e -> {
+			final RunningJvm runningJvm = currentJvm.get();
+			if (runningJvm == null) {
+				return;
+			}
+			final String text = bytecode.getText();
+			final ClassContent classContent = currentClass.get();
+			if (classContent == null) {
+				return;
+			}
+			final LoadedClass loadedClass = classContent.getLoadedClass();
+			executorService.submit(() -> {
+				final Assembler assembler = new JasmAssembler(loadedClass.getName());
+				try {
+					final byte[] assembledClassFile = assembler.assemble(text);
+					final boolean success = clientHandler.replaceClass(runningJvm, loadedClass, assembledClassFile);
+					Platform.runLater(() -> {
+						if (!success) {
+							// TODO better error message
+							alertHelper.showError("Class Patch Failed", "Failed to patch class");
+							return;
+						}
+						disassembledClass.set(text);
+					});
+				}
+				catch (AssemblyException assemblyException) {
+					Platform.runLater(() -> alertHelper.showError("Assembly Failed",
+					                                              "Failed to assemble class",
+					                                              assemblyException));
+				}
+			});
+		});
+
+		final KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.S, KeyCodeCombination.CONTROL_DOWN);
+		save.setAccelerator(shortcut);
+
+		// It seems like menu item accelerators don't trigger in the CodeArea. We have to manually wire it together.
+		final InputMap<KeyEvent> inputMap = InputMap.consumeWhen(EventPattern.keyPressed(shortcut),
+		                                                         () -> !save.disableProperty().get(),
+		                                                         keyEvent -> save.fire());
+		Nodes.addInputMap(bytecode, inputMap);
+
+		final MenuItem reset = new MenuItem("Reset Changes");
+		reset.disableProperty().bind(bytecodeModified.not());
+
+		reset.setOnAction(e -> bytecode.replaceText(disassembledClass.get()));
+
+		contextMenu.getItems().addAll(save, reset);
+
+		bytecode.setContextMenu(contextMenu);
 	}
 
 	private void setupTitlePaneText() {
@@ -120,13 +224,14 @@ public class CurrentClassController {
 			classFields.getRoot().getChildren().clear();
 		}
 		else {
-			processBytecode(newv, new QuiltflowerDecompiler(), classFile);
-			processBytecode(newv, new AsmDisassembler(), bytecode);
+			processBytecode(newv, new QuiltflowerDecompiler(), classFile, decompiledClass::set);
+			processBytecode(newv, new JasmDisassembler(), bytecode, disassembledClass::set);
 			loadChildren(classFields.getRoot(), newv.getClassFields());
 		}
 	}
 
-	private void processBytecode(ClassContent classContent, BytecodeTextifier bytecodeTextifier, CodeArea codeArea) {
+	private void processBytecode(ClassContent classContent, BytecodeTextifier bytecodeTextifier, CodeArea codeArea,
+	                             Consumer<String> onProcess) {
 		final String currentContent = codeArea.getText();
 		final Future<?> processingPlaceholderTask = executorService.schedule(() -> {
 			Platform.runLater(() -> {
@@ -164,10 +269,12 @@ public class CurrentClassController {
 					return;
 				}
 				codeArea.replaceText(processedClass);
+				codeArea.getUndoManager().forgetHistory(); // it's a new class, reset the history
 				// sometimes the text area wasn't scrolling to 0 by default, so let's tell it to no matter what
 				codeArea.scrollYToPixel(0);
 				// Trigger update immediately
 				codeAreaHelper.triggerHighlightUpdate(codeArea);
+				onProcess.accept(processedClass);
 			});
 		});
 	}
@@ -245,18 +352,20 @@ public class CurrentClassController {
 	}
 
 	// CodeArea must be in a VBox to replace and insert into VirtualizedScrollPane
-	private void setupCodeArea(CodeArea codeArea) {
-		codeArea.setEditable(false);
+	private void setupCodeArea(CodeArea codeArea, boolean editable) {
 		final Label placeholderLabel = new Label();
 		placeholderLabel.textProperty()
 		                .bind(Bindings.when(this.currentClass.isNotNull())
 		                              .then("Processing class")
 		                              .otherwise(NO_CLASS_FILE_OPEN));
 		codeArea.setPlaceholder(placeholderLabel);
-		codeArea.mouseTransparentProperty()
-		        .bind(Bindings.createBooleanBinding(() -> codeArea.getText().isEmpty(), codeArea.textProperty()));
-		codeArea.focusTraversableProperty()
-		        .bind(Bindings.createBooleanBinding(() -> !codeArea.getText().isEmpty(), codeArea.textProperty()));
+		if (!editable) {
+			codeArea.setEditable(false);
+			codeArea.mouseTransparentProperty()
+			        .bind(Bindings.createBooleanBinding(() -> codeArea.getText().isEmpty(), codeArea.textProperty()));
+			codeArea.focusTraversableProperty()
+			        .bind(Bindings.createBooleanBinding(() -> !codeArea.getText().isEmpty(), codeArea.textProperty()));
+		}
 		codeAreaHelper.initializeJavaEditor(codeArea);
 	}
 

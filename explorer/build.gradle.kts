@@ -49,6 +49,8 @@ dependencies {
     implementation("org.ow2.asm:asm:${asmVersion}")
     implementation("org.ow2.asm:asm-util:${asmVersion}")
 
+    implementation("com.roscopeco.jasm:jasm:0.6.0")
+
     // Let's build a fat jar for now... this includes the java runtime deps for windows/linux/mac
     implementation("org.openjfx:javafx-base:${javafx.version}:${JavaFXPlatform.WINDOWS.classifier}")
     implementation("org.openjfx:javafx-base:${javafx.version}:${JavaFXPlatform.LINUX.classifier}")
