@@ -74,22 +74,21 @@ public class CodeAreaHelper {
 				newv.getWindow().addEventHandler(WindowEvent.WINDOW_HIDDEN, eventHandler);
 			}
 		});
-
-		// Adding an input map breaks this... TODO look into
-//		// Auto-indent to the whitespace of the previous line
-//		final Pattern whiteSpace = Pattern.compile("^\\s+");
-//		codeArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
-//			if (keyEvent.getCode() == KeyCode.ENTER) {
-//				final int caretPosition = codeArea.getCaretPosition();
-//				final int currentParagraph = codeArea.getCurrentParagraph();
-//				final Matcher matcher = whiteSpace.matcher(codeArea.getParagraph(currentParagraph - 1)
-//				                                                   .getSegments()
-//				                                                   .get(0));
-//				if (matcher.find()) {
-//					Platform.runLater(() -> codeArea.insertText(caretPosition, matcher.group()));
-//				}
-//			}
-//		});
+		
+		// Auto-indent to the whitespace of the previous line
+		final Pattern whiteSpace = Pattern.compile("^\\s+");
+		codeArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+			if (keyEvent.getCode() == KeyCode.ENTER) {
+				final int caretPosition = codeArea.getCaretPosition();
+				final int currentParagraph = codeArea.getCurrentParagraph();
+				final Matcher matcher = whiteSpace.matcher(codeArea.getParagraph(currentParagraph - 1)
+				                                                   .getSegments()
+				                                                   .get(0));
+				if (matcher.find()) {
+					Platform.runLater(() -> codeArea.insertText(caretPosition, matcher.group()));
+				}
+			}
+		});
 	}
 
 	public void triggerHighlightUpdate(CodeArea codeArea) {
