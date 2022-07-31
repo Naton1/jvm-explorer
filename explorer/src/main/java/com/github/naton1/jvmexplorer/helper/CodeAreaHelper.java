@@ -74,7 +74,7 @@ public class CodeAreaHelper {
 				newv.getWindow().addEventHandler(WindowEvent.WINDOW_HIDDEN, eventHandler);
 			}
 		});
-		
+
 		// Auto-indent to the whitespace of the previous line
 		final Pattern whiteSpace = Pattern.compile("^\\s+");
 		codeArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
