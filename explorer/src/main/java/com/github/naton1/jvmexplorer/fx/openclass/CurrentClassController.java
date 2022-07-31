@@ -24,6 +24,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
@@ -41,9 +42,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.wellbehaved.event.EventPattern;
-import org.fxmisc.wellbehaved.event.InputMap;
-import org.fxmisc.wellbehaved.event.Nodes;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -65,6 +63,8 @@ public class CurrentClassController {
 
 	private final SimpleStringProperty decompiledClass = new SimpleStringProperty();
 	private final SimpleStringProperty disassembledClass = new SimpleStringProperty();
+
+	private final SimpleBooleanProperty allowBytecodeEditing = new SimpleBooleanProperty(false);
 
 	@FXML
 	private CodeArea bytecode;
@@ -121,8 +121,11 @@ public class CurrentClassController {
 
 		setupClassFieldTree();
 
-		setupCodeArea(classFile, false);
-		setupCodeArea(bytecode, true);
+		setupCodeArea(classFile);
+		setupCodeArea(bytecode);
+
+		classFile.setEditable(false);
+		bytecode.editableProperty().bind(allowBytecodeEditing);
 
 		setupBytecodeEditor();
 	}
@@ -130,10 +133,10 @@ public class CurrentClassController {
 	private void setupBytecodeEditor() {
 
 		final BooleanBinding bytecodeModified = Bindings.createBooleanBinding(() -> {
-			if (currentClass.get() == null) {
+			if (!allowBytecodeEditing.get()) {
 				return false;
 			}
-			if (bytecode.getText().equals(PROCESSOR_FAILED)) {
+			if (currentClass.get() == null) {
 				return false;
 			}
 			final String baseDisassembledClass = disassembledClass.get();
@@ -144,7 +147,7 @@ public class CurrentClassController {
 			final List<String> editorText = bytecode.getText().lines().collect(Collectors.toList());
 			final List<String> baseLines = baseDisassembledClass.lines().collect(Collectors.toList());
 			return !editorText.equals(baseLines);
-		}, bytecode.textProperty(), disassembledClass, currentClass);
+		}, bytecode.textProperty(), allowBytecodeEditing, disassembledClass, currentClass);
 
 		bytecodeTab.textProperty()
 		           .bind(Bindings.createStringBinding(() -> "Bytecode" + (bytecodeModified.get() ? "*" : ""),
@@ -192,10 +195,14 @@ public class CurrentClassController {
 		save.setAccelerator(shortcut);
 
 		// It seems like menu item accelerators don't trigger in the CodeArea. We have to manually wire it together.
-		final InputMap<KeyEvent> inputMap = InputMap.consumeWhen(EventPattern.keyPressed(shortcut),
-		                                                         () -> !save.disableProperty().get(),
-		                                                         keyEvent -> save.fire());
-		Nodes.addInputMap(bytecode, inputMap);
+		bytecode.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			if (save.disableProperty().get()) {
+				return;
+			}
+			if (shortcut.match(e)) {
+				save.fire();
+			}
+		});
 
 		final MenuItem reset = new MenuItem("Reset Changes");
 		reset.disableProperty().bind(bytecodeModified.not());
@@ -218,6 +225,7 @@ public class CurrentClassController {
 	}
 
 	private void onClassChange(ClassContent old, ClassContent newv) {
+		allowBytecodeEditing.set(false);
 		if (newv == null) {
 			classFile.clear();
 			bytecode.clear();
@@ -225,7 +233,10 @@ public class CurrentClassController {
 		}
 		else {
 			processBytecode(newv, new QuiltflowerDecompiler(), classFile, decompiledClass::set);
-			processBytecode(newv, new JasmDisassembler(), bytecode, disassembledClass::set);
+			processBytecode(newv, new JasmDisassembler(), bytecode, newDisassembledClass -> {
+				allowBytecodeEditing.set(!PROCESSOR_FAILED.equals(newDisassembledClass));
+				disassembledClass.set(newDisassembledClass);
+			});
 			loadChildren(classFields.getRoot(), newv.getClassFields());
 		}
 	}
@@ -250,8 +261,7 @@ public class CurrentClassController {
 		}, 500L, TimeUnit.MILLISECONDS);
 		executorService.submit(() -> {
 			log.debug("Processing class {} with {}", classContent.getLoadedClass(), bytecodeTextifier);
-			final String processedClass = classContent.getClassContent().length > 0 ? bytecodeTextifier.process(
-					classContent.getClassContent()) : null;
+			final String processedClass = process(bytecodeTextifier, classContent.getClassContent());
 			processingPlaceholderTask.cancel(false);
 			Platform.runLater(() -> {
 				// Don't update if the class was switched again
@@ -261,22 +271,39 @@ public class CurrentClassController {
 					          bytecodeTextifier);
 					return;
 				}
+				final String newText;
 				if (processedClass == null || processedClass.isEmpty()) {
 					log.warn("Process result is empty for class {} with processor {}",
 					         classContent.getLoadedClass(),
 					         bytecodeTextifier);
-					codeArea.replaceText(PROCESSOR_FAILED);
-					return;
+					newText = PROCESSOR_FAILED;
 				}
-				codeArea.replaceText(processedClass);
+				else {
+					newText = processedClass;
+				}
+				codeArea.replaceText(newText);
 				codeArea.getUndoManager().forgetHistory(); // it's a new class, reset the history
 				// sometimes the text area wasn't scrolling to 0 by default, so let's tell it to no matter what
 				codeArea.scrollYToPixel(0);
 				// Trigger update immediately
 				codeAreaHelper.triggerHighlightUpdate(codeArea);
-				onProcess.accept(processedClass);
+				onProcess.accept(newText);
 			});
 		});
+	}
+
+	private String process(BytecodeTextifier bytecodeTextifier, byte[] input) {
+		if (input == null || input.length == 0) {
+			log.warn("No input to process for {}", bytecodeTextifier);
+			return null;
+		}
+		try {
+			return bytecodeTextifier.process(input);
+		}
+		catch (Throwable t) {
+			log.warn("Failed to process bytecode using {}", bytecodeTextifier, t);
+			return null;
+		}
 	}
 
 	private void setupClassFieldTree() {
@@ -352,20 +379,17 @@ public class CurrentClassController {
 	}
 
 	// CodeArea must be in a VBox to replace and insert into VirtualizedScrollPane
-	private void setupCodeArea(CodeArea codeArea, boolean editable) {
+	private void setupCodeArea(CodeArea codeArea) {
 		final Label placeholderLabel = new Label();
 		placeholderLabel.textProperty()
 		                .bind(Bindings.when(this.currentClass.isNotNull())
 		                              .then("Processing class")
 		                              .otherwise(NO_CLASS_FILE_OPEN));
 		codeArea.setPlaceholder(placeholderLabel);
-		if (!editable) {
-			codeArea.setEditable(false);
-			codeArea.mouseTransparentProperty()
-			        .bind(Bindings.createBooleanBinding(() -> codeArea.getText().isEmpty(), codeArea.textProperty()));
-			codeArea.focusTraversableProperty()
-			        .bind(Bindings.createBooleanBinding(() -> !codeArea.getText().isEmpty(), codeArea.textProperty()));
-		}
+		codeArea.mouseTransparentProperty()
+		        .bind(Bindings.createBooleanBinding(() -> codeArea.getText().isEmpty(), codeArea.textProperty()));
+		codeArea.focusTraversableProperty()
+		        .bind(Bindings.createBooleanBinding(() -> !codeArea.getText().isEmpty(), codeArea.textProperty()));
 		codeAreaHelper.initializeJavaEditor(codeArea);
 	}
 
