@@ -23,9 +23,6 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.wellbehaved.event.EventPattern;
-import org.fxmisc.wellbehaved.event.InputMap;
-import org.fxmisc.wellbehaved.event.Nodes;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -114,10 +111,11 @@ public class RemoteCodeExecutorController {
 		final KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.R, KeyCodeCombination.CONTROL_DOWN);
 		run.setAccelerator(shortcut);
 
-		// It seems like menu item accelerators don't trigger in the CodeArea. We have to manually wire it together.
-		final InputMap<KeyEvent> inputMap = InputMap.consume(EventPattern.keyPressed(shortcut),
-		                                                     keyEvent -> run.fire());
-		Nodes.addInputMap(code, inputMap);
+		code.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			if (shortcut.match(e)) {
+				run.fire();
+			}
+		});
 
 		contextMenu.getItems().add(run);
 

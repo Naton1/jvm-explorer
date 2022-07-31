@@ -37,7 +37,9 @@ public class PatchHelper {
 					log.warn("Failed to process {}", classFile.getName());
 					throw new UncheckedIOException(e);
 				}
-				patchedClasses.accept(patchedClassCount.incrementAndGet());
+				synchronized (patchedClassCount) {
+					patchedClasses.accept(patchedClassCount.incrementAndGet());
+				}
 			});
 			return true;
 		}

@@ -10,10 +10,13 @@ import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Dialog;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.xml.stream.EventFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -57,6 +60,11 @@ public class RemoteCodeHelper {
 			dialog.setOnHidden(e -> currentJvm.removeListener(changeListener));
 			currentJvm.addListener(changeListener);
 			dialogWindow.setOnCloseRequest(e -> dialog.hide());
+			dialog.getDialogPane().addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+				if (e.getCode() == KeyCode.ESCAPE) {
+					dialogWindow.hide();
+				}
+			});
 			dialog.show();
 		}
 		catch (IOException e) {

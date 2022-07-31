@@ -40,7 +40,12 @@ public class ExportHelper {
 			          .parallel()
 			          .map(loadedClass -> new Pair<>(loadedClass, clientHandler.getClassBytes(jvm, loadedClass)))
 			          .forEach(pair -> {
-				          currentProgress.accept(count.incrementAndGet());
+						  log.debug("Exporting: {}", loadedClasses);
+				          synchronized (count) {
+					          // Possible race condition - count could be incremented before another thread, but the
+					          // other thread could run currentProgress first. Therefore, we synchronize.
+					          currentProgress.accept(count.incrementAndGet());
+				          }
 				          final String name = pair.getKey().getName().replace('.', '/') + ".class";
 				          final byte[] content = pair.getValue();
 				          write(name, content, jarOutputStream);
