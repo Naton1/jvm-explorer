@@ -1,12 +1,12 @@
 package com.github.naton1.jvmexplorer.fx.classes;
 
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
-import com.github.naton1.jvmexplorer.fx.compile.RemoteCodeExecutorController;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.ClassTreeHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
 import com.github.naton1.jvmexplorer.helper.FileHelper;
 import com.github.naton1.jvmexplorer.helper.PatchHelper;
+import com.github.naton1.jvmexplorer.helper.RemoteCodeHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
@@ -17,14 +17,9 @@ import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
-import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tooltip;
@@ -32,7 +27,6 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.ImageView;
-import javafx.stage.Modality;
 import javafx.stage.Window;
 import javafx.util.Callback;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +40,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -55,6 +48,7 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 	private final PatchHelper patchHelper = new PatchHelper();
 	private final ClassTreeHelper classTreeHelper = new ClassTreeHelper();
 	private final FileHelper fileHelper = new FileHelper();
+	private final RemoteCodeHelper remoteCodeHelper = new RemoteCodeHelper();
 
 	private final ExecutorService executorService;
 	private final AlertHelper alertHelper;
@@ -366,7 +360,13 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 			final ClassTreeNode classTreeNode = treeCell.getItem();
 			if (classTreeNode == null) {
 				final List<LoadedClass> classpath = classTreeHelper.getLoadedClassScope(classesTreeRoot, null);
-				executeCode(owner, classpath, null, null);
+				remoteCodeHelper.showExecuteCode(owner,
+				                                 classpath,
+				                                 null,
+				                                 null,
+				                                 executorService,
+				                                 clientHandler,
+				                                 currentJvm);
 				return;
 			}
 			switch (classTreeNode.getType()) {
@@ -374,7 +374,13 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 				final List<LoadedClass> classLoaderScope = classTreeHelper.getLoadedClassScope(classesTreeRoot,
 				                                                                               treeCell.getTreeItem());
 				final ClassLoaderDescriptor classLoaderDescriptor = classTreeNode.getClassLoaderDescriptor();
-				executeCode(owner, classLoaderScope, classLoaderDescriptor, null);
+				remoteCodeHelper.showExecuteCode(owner,
+				                                 classLoaderScope,
+				                                 classLoaderDescriptor,
+				                                 null,
+				                                 executorService,
+				                                 clientHandler,
+				                                 currentJvm);
 				break;
 			case PACKAGE:
 				final String packageName = classTreeHelper.getPackageName(treeCell.getTreeItem());
@@ -397,7 +403,13 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 				}
 				final List<LoadedClass> packageClassPath = classTreeHelper.getLoadedClassScope(classesTreeRoot,
 				                                                                               packageClassLoaderNodeItem);
-				executeCode(owner, packageClassPath, packageClassLoader, packageName);
+				remoteCodeHelper.showExecuteCode(owner,
+				                                 packageClassPath,
+				                                 packageClassLoader,
+				                                 packageName,
+				                                 executorService,
+				                                 clientHandler,
+				                                 currentJvm);
 				break;
 			case CLASS:
 				final TreeItem<ClassTreeNode> packageNode = treeCell.getTreeItem().getParent();
@@ -412,7 +424,13 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 				                                                  .getClassLoaderDescriptor();
 				final List<LoadedClass> classPath = classTreeHelper.getLoadedClassScope(classesTreeRoot,
 				                                                                        classLoaderNodeItem);
-				executeCode(owner, classPath, classLoader, classPackageName);
+				remoteCodeHelper.showExecuteCode(owner,
+				                                 classPath,
+				                                 classLoader,
+				                                 classPackageName,
+				                                 executorService,
+				                                 clientHandler,
+				                                 currentJvm);
 				break;
 			}
 		});
@@ -524,45 +542,6 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 			isComplete.set(true);
 			success.set(result);
 		});
-	}
-
-	private void executeCode(Window owner, List<LoadedClass> classpath, ClassLoaderDescriptor classLoaderDescriptor,
-	                         String packageName) {
-		try {
-			final Dialog<?> dialog = new Dialog<>();
-			final FXMLLoader loader = new FXMLLoader(getClass().getClassLoader()
-			                                                   .getResource("fxml/remote_code_executor.fxml"));
-			final Parent root = loader.load();
-			final RemoteCodeExecutorController remoteCodeExecutorController = loader.getController();
-			remoteCodeExecutorController.initialize(executorService,
-			                                        clientHandler,
-			                                        currentJvm.get(),
-			                                        classLoaderDescriptor,
-			                                        packageName,
-			                                        classpath);
-			dialog.getDialogPane().setContent(root);
-			dialog.getDialogPane().getButtonTypes().setAll();
-			dialog.getDialogPane().getStyleClass().add("custom-dialog-pane");
-			final String title = Stream.of("Remote Code Executor", classLoaderDescriptor, packageName)
-			                           .filter(Objects::nonNull)
-			                           .map(Object::toString)
-			                           .map(String::trim)
-			                           .filter(s -> !s.isEmpty())
-			                           .collect(Collectors.joining(" - "));
-			dialog.setTitle(title);
-			dialog.initOwner(owner);
-			dialog.initModality(Modality.NONE);
-			dialog.setResizable(true);
-			final Window dialogWindow = dialog.getDialogPane().getScene().getWindow();
-			final ChangeListener<RunningJvm> changeListener = (obs, old, newv) -> dialogWindow.hide();
-			dialog.setOnHidden(e -> currentJvm.removeListener(changeListener));
-			currentJvm.addListener(changeListener);
-			dialogWindow.setOnCloseRequest(e -> dialog.hide());
-			dialog.show();
-		}
-		catch (IOException e) {
-			log.warn("Failed to initialize code executor", e);
-		}
 	}
 
 }

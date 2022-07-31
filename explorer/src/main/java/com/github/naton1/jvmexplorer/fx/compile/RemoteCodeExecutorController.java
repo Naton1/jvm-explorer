@@ -14,9 +14,18 @@ import com.github.naton1.jvmexplorer.protocol.ExecutionResult;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
+import org.fxmisc.wellbehaved.event.EventPattern;
+import org.fxmisc.wellbehaved.event.InputMap;
+import org.fxmisc.wellbehaved.event.Nodes;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +42,9 @@ public class RemoteCodeExecutorController {
 
 	@FXML
 	private TextArea output;
+
+	@FXML
+	private Button runButton;
 
 	private ExecutorService executorService;
 	private ClientHandler clientHandler;
@@ -59,6 +71,8 @@ public class RemoteCodeExecutorController {
 		codeAreaHelper.initializeJavaEditor(code);
 		code.replaceText(codeTemplate);
 		codeAreaHelper.triggerHighlightUpdate(code);
+
+		setupContextMenu();
 	}
 
 	@FXML
@@ -89,6 +103,25 @@ public class RemoteCodeExecutorController {
 			Platform.runLater(() -> setOutputText("Execution " + (result.isSuccess() ? "Succeeded" : "Failed"),
 			                                      result.getMessage()));
 		});
+	}
+
+	private void setupContextMenu() {
+		final ContextMenu contextMenu = new ContextMenu();
+
+		final MenuItem run = new MenuItem("Execute Code");
+		run.setOnAction(e -> runButton.fire());
+
+		final KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.R, KeyCodeCombination.CONTROL_DOWN);
+		run.setAccelerator(shortcut);
+
+		// It seems like menu item accelerators don't trigger in the CodeArea. We have to manually wire it together.
+		final InputMap<KeyEvent> inputMap = InputMap.consume(EventPattern.keyPressed(shortcut),
+		                                                     keyEvent -> run.fire());
+		Nodes.addInputMap(code, inputMap);
+
+		contextMenu.getItems().add(run);
+
+		code.setContextMenu(contextMenu);
 	}
 
 	private void setOutputText(String header, String body) {

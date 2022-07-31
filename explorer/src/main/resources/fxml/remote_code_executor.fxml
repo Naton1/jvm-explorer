@@ -16,7 +16,7 @@
       </VBox>
       <HBox alignment="CENTER_LEFT">
          <children>
-            <Button mnemonicParsing="false" onAction="#onExecute" text="Execute Code" />
+            <Button fx:id="runButton" mnemonicParsing="false" onAction="#onExecute" text="Execute Code" />
          </children>
          <VBox.margin>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

@@ -225,6 +225,9 @@ public class InstrumentationHelper {
 		                                                 field.getName(),
 		                                                 field.getType().getName(),
 		                                                 Modifier.fieldModifiers() & field.getModifiers());
+		if (fieldValue instanceof Class) {
+			return new ClassField(classKey, new WrappedObject(fieldValue.toString()));
+		}
 		if (fieldValue == null || isPrimitiveOrWrapperOrString(fieldValue)) {
 			return new ClassField(classKey, fieldValue);
 		}

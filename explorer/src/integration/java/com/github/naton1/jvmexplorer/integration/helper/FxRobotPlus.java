@@ -9,7 +9,6 @@ import javafx.stage.Stage;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.testfx.api.FxRobot;
-import org.testfx.util.WaitForAsyncUtils;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -25,42 +24,40 @@ public class FxRobotPlus extends FxRobot {
 	private final FxRobot fxRobot;
 
 	public <T> void selectContextMenu(ListView<T> listView, Predicate<T> cellSelector, String action) {
-		final ListCell<T> listCell = listView.lookupAll(".cell")
-		                                     .stream()
-		                                     .map(n -> (ListCell<T>) n)
-		                                     .filter(cell -> cellSelector.test(cell.getItem()))
-		                                     .findFirst()
-		                                     .orElseThrow();
-		WaitForAsyncUtils.waitForAsyncFx(5000,
-		                                 () -> listCell.getContextMenu()
-		                                               .getItems()
-		                                               .stream()
-		                                               .filter(m -> m.getText() != null && m.getText()
-		                                                                                    .startsWith(action))
-		                                               .findFirst()
-		                                               .orElseThrow()
-		                                               .getOnAction()
-		                                               .handle(null));
+		interact(() -> {
+			final ListCell<T> listCell = listView.lookupAll(".cell")
+			                                     .stream()
+			                                     .map(n -> (ListCell<T>) n)
+			                                     .filter(cell -> cellSelector.test(cell.getItem()))
+			                                     .findFirst()
+			                                     .orElseThrow();
+			listCell.getContextMenu()
+			        .getItems()
+			        .stream()
+			        .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			        .findFirst()
+			        .orElseThrow()
+			        .fire();
+		});
 	}
 
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
-		final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
-		final TreeCell<T> treeCell = treeView.lookupAll(".cell")
-		                                     .stream()
-		                                     .map(n -> (TreeCell<T>) n)
-		                                     .filter(cell -> selected.getValue().equals(cell.getItem()))
-		                                     .findFirst()
-		                                     .orElseThrow();
-		WaitForAsyncUtils.waitForAsyncFx(5000,
-		                                 () -> treeCell.getContextMenu()
-		                                               .getItems()
-		                                               .stream()
-		                                               .filter(m -> m.getText() != null && m.getText()
-		                                                                                    .startsWith(action))
-		                                               .findFirst()
-		                                               .orElseThrow()
-		                                               .getOnAction()
-		                                               .handle(null));
+		interact(() -> {
+			final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
+			final TreeCell<T> treeCell = treeView.lookupAll(".cell")
+			                                     .stream()
+			                                     .map(n -> (TreeCell<T>) n)
+			                                     .filter(cell -> selected.getValue().equals(cell.getItem()))
+			                                     .findFirst()
+			                                     .orElseThrow();
+			treeCell.getContextMenu()
+			        .getItems()
+			        .stream()
+			        .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			        .findFirst()
+			        .orElseThrow()
+			        .fire();
+		});
 	}
 
 	public <T> boolean select(ListView<T> listView, String name) {

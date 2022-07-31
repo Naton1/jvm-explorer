@@ -1,23 +1,29 @@
 package com.github.naton1.jvmexplorer.helper;
 
-import javafx.beans.binding.Bindings;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.WindowEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import org.fxmisc.richtext.model.StyleSpans;
+import org.reactfx.Subscription;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -38,21 +44,52 @@ public class CodeAreaHelper {
 		parent.getChildren().add(scrollPane);
 		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 		codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
-		codeArea.multiPlainChanges()
-		        .successionEnds(Duration.ofMillis(500))
-		        .retainLatestUntilLater(executorService)
-		        .supplyTask(() -> computeHighlighting(codeArea))
-		        .awaitLatest(codeArea.multiPlainChanges())
-		        .filterMap(t -> {
-			        if (t.isSuccess()) {
-				        return Optional.of(t.get());
-			        }
-			        else {
-				        log.warn("Failed to compute highlighting", t.getFailure());
-				        return Optional.empty();
-			        }
-		        })
-		        .subscribe(highlighting -> applyHighlighting(codeArea, highlighting));
+		final Subscription subscription = codeArea.multiPlainChanges()
+		                                          .successionEnds(Duration.ofMillis(500))
+		                                          .retainLatestUntilLater(executorService)
+		                                          .supplyTask(() -> computeHighlighting(codeArea))
+		                                          .awaitLatest(codeArea.multiPlainChanges())
+		                                          .filterMap(t -> {
+			                                          if (t.isSuccess()) {
+				                                          return Optional.of(t.get());
+			                                          }
+			                                          else {
+				                                          log.warn("Failed to compute highlighting", t.getFailure());
+				                                          return Optional.empty();
+			                                          }
+		                                          })
+		                                          .subscribe(highlighting -> applyHighlighting(codeArea,
+		                                                                                       highlighting));
+
+		// Stop highlighting when the window is closed
+		final EventHandler<WindowEvent> eventHandler = e -> {
+			log.debug("Window closed, unsubscribing highlighting for {}", codeArea);
+			subscription.unsubscribe();
+		};
+		codeArea.sceneProperty().addListener((obs, old, newv) -> {
+			if (old != null) {
+				old.getWindow().removeEventHandler(WindowEvent.WINDOW_HIDDEN, eventHandler);
+			}
+			if (newv != null) {
+				newv.getWindow().addEventHandler(WindowEvent.WINDOW_HIDDEN, eventHandler);
+			}
+		});
+
+		// Adding an input map breaks this... TODO look into
+//		// Auto-indent to the whitespace of the previous line
+//		final Pattern whiteSpace = Pattern.compile("^\\s+");
+//		codeArea.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent -> {
+//			if (keyEvent.getCode() == KeyCode.ENTER) {
+//				final int caretPosition = codeArea.getCaretPosition();
+//				final int currentParagraph = codeArea.getCurrentParagraph();
+//				final Matcher matcher = whiteSpace.matcher(codeArea.getParagraph(currentParagraph - 1)
+//				                                                   .getSegments()
+//				                                                   .get(0));
+//				if (matcher.find()) {
+//					Platform.runLater(() -> codeArea.insertText(caretPosition, matcher.group()));
+//				}
+//			}
+//		});
 	}
 
 	public void triggerHighlightUpdate(CodeArea codeArea) {
