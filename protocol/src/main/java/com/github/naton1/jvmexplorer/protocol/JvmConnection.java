@@ -13,7 +13,7 @@ public interface JvmConnection {
 
 	void requestPackets(PacketType packetType);
 
-	boolean redefineClass(LoadedClass loadedClass, byte[] bytes);
+	PatchResult redefineClass(LoadedClass loadedClass, byte[] bytes);
 
 	ExecutionResult executeCallable(String className, byte[] classFile, ClassLoaderDescriptor classLoaderDescriptor);
 

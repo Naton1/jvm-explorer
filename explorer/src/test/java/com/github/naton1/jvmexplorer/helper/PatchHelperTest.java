@@ -4,6 +4,7 @@ import com.github.naton1.jvmexplorer.JarTestHelper;
 import com.github.naton1.jvmexplorer.Startup;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
+import com.github.naton1.jvmexplorer.protocol.PatchResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +33,7 @@ class PatchHelperTest {
 
 		Mockito.when(clientHandler.replaceClass(ArgumentMatchers.any(), ArgumentMatchers.any(),
 		                                        ArgumentMatchers.any()))
-		       .thenReturn(true);
+		       .thenReturn(PatchResult.builder().success(true).build());
 
 		final boolean success = patchHelper.patch(jarFile, JVM, clientHandler, null, patchedClasses::set);
 

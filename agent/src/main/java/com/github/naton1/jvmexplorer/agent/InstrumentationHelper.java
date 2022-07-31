@@ -4,9 +4,12 @@ import com.esotericsoftware.minlog.Log;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
 import com.github.naton1.jvmexplorer.protocol.ClassFieldKey;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
+import com.github.naton1.jvmexplorer.protocol.PatchResult;
 import com.github.naton1.jvmexplorer.protocol.WrappedObject;
 import lombok.RequiredArgsConstructor;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
@@ -256,15 +259,18 @@ public class InstrumentationHelper {
 		return type.isPrimitive() || type == String.class;
 	}
 
-	public boolean redefineClass(Class<?> klass, byte[] bytes) {
+	public PatchResult redefineClass(Class<?> klass, byte[] bytes) {
 		try {
 			instrumentation.redefineClasses(new ClassDefinition(klass, bytes));
-			return true;
+			return PatchResult.builder().success(true).build();
 		}
 		catch (Throwable e) {
 			// Several exceptions/errors can be thrown. We just want to know if it fails.
 			Log.warn("Failed to redefine class", e);
-			return false;
+			final StringWriter stringWriter = new StringWriter();
+			final PrintWriter printWriter = new PrintWriter(stringWriter);
+			e.printStackTrace(printWriter);
+			return PatchResult.builder().success(false).message(stringWriter.toString()).build();
 		}
 	}
 

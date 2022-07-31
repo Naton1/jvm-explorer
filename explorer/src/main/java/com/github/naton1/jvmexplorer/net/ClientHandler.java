@@ -11,6 +11,7 @@ import com.github.naton1.jvmexplorer.protocol.ExecutionResult;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.PacketType;
+import com.github.naton1.jvmexplorer.protocol.PatchResult;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -71,9 +72,9 @@ public class ClientHandler extends Listener {
 		getServerTracker(runningJvm).ifPresent(Connection::close);
 	}
 
-	public boolean replaceClass(RunningJvm runningJvm, LoadedClass loadedClass, byte[] bytes) {
+	public PatchResult replaceClass(RunningJvm runningJvm, LoadedClass loadedClass, byte[] bytes) {
 		return getJvmConnection(runningJvm).map(jvmConnection -> jvmConnection.redefineClass(loadedClass, bytes))
-		                                   .orElse(false);
+		                                   .orElse(null);
 	}
 
 	public ExecutionResult executeCallable(RunningJvm runningJvm, String className, byte[] classFile,

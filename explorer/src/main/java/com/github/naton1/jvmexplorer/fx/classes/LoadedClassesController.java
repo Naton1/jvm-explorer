@@ -202,18 +202,18 @@ public class LoadedClassesController {
 			currentClass.setValue(null);
 			return;
 		}
-		if (newv.getValue().getLoadedClass() == null) {
-			// Selected a package, not a class
+		if (newv.getValue().getType() != ClassTreeNode.Type.CLASS) {
 			return;
 		}
+		final LoadedClass loadedClass = newv.getValue().getLoadedClass();
 		final RunningJvm selectedJvm = currentJvm.get();
 		if (selectedJvm == null) {
 			return;
 		}
-		log.debug("Received class content");
+		log.debug("Selected class: {}", loadedClass);
 		executorService.submit(() -> {
-			final ClassContent classContent = clientHandler.getClassContent(selectedJvm,
-			                                                                newv.getValue().getLoadedClass());
+			final ClassContent classContent = clientHandler.getClassContent(selectedJvm, loadedClass);
+			log.debug("Received class content for {}", loadedClass);
 			if (classContent != null) {
 				Platform.runLater(() -> currentClass.set(classContent));
 			}

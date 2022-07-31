@@ -4,6 +4,7 @@ import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
+import com.github.naton1.jvmexplorer.protocol.PatchResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -28,9 +29,10 @@ public class PatchHelper {
 					final byte[] classContents = jar.getInputStream(classFile).readAllBytes();
 					// Note - we may not always want to pass in the class loader. It could be in a child classloader.
 					final LoadedClass loadedClass = new LoadedClass(name, classLoaderDescriptor);
-					final boolean replaced = clientHandler.replaceClass(runningJvm, loadedClass, classContents);
-					if (!replaced) {
-						throw new IllegalStateException("Failed to replace class on jvm: " + name);
+					final PatchResult result = clientHandler.replaceClass(runningJvm, loadedClass, classContents);
+					if (!result.isSuccess()) {
+						throw new IllegalStateException(
+								"Failed to replace class on jvm: " + name + " because " + result.getMessage());
 					}
 				}
 				catch (IOException e) {

@@ -12,6 +12,7 @@ import com.github.naton1.jvmexplorer.protocol.JvmClient;
 import com.github.naton1.jvmexplorer.protocol.JvmConnection;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.protocol.PacketType;
+import com.github.naton1.jvmexplorer.protocol.PatchResult;
 import lombok.RequiredArgsConstructor;
 
 import java.io.PrintWriter;
@@ -89,11 +90,11 @@ public class JvmConnectionImpl implements JvmConnection {
 	}
 
 	@Override
-	public boolean redefineClass(LoadedClass loadedClass, byte[] bytes) {
+	public PatchResult redefineClass(LoadedClass loadedClass, byte[] bytes) {
 		final ClassLoader classLoader = classLoaderStore.lookup(loadedClass.getClassLoaderDescriptor());
 		final Class<?> klass = instrumentationHelper.getClassByName(loadedClass.getName(), classLoader);
 		if (klass == null) {
-			return false;
+			return PatchResult.builder().success(false).message("Failed to find class: " + loadedClass).build();
 		}
 		return instrumentationHelper.redefineClass(klass, bytes);
 	}

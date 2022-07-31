@@ -19,6 +19,7 @@ import com.github.naton1.jvmexplorer.protocol.ClassFieldPath;
 import com.github.naton1.jvmexplorer.protocol.ClassFields;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
+import com.github.naton1.jvmexplorer.protocol.PatchResult;
 import com.github.naton1.jvmexplorer.protocol.WrappedObject;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -173,11 +174,10 @@ public class CurrentClassController {
 				final Assembler assembler = new JasmAssembler(loadedClass.getName());
 				try {
 					final byte[] assembledClassFile = assembler.assemble(text);
-					final boolean success = clientHandler.replaceClass(runningJvm, loadedClass, assembledClassFile);
+					final PatchResult result = clientHandler.replaceClass(runningJvm, loadedClass, assembledClassFile);
 					Platform.runLater(() -> {
-						if (!success) {
-							// TODO better error message
-							alertHelper.showError("Class Patch Failed", "Failed to patch class");
+						if (!result.isSuccess()) {
+							alertHelper.showError("Class Patch Failed", result.getMessage());
 							return;
 						}
 						disassembledClass.set(text);
@@ -262,6 +262,7 @@ public class CurrentClassController {
 		executorService.submit(() -> {
 			log.debug("Processing class {} with {}", classContent.getLoadedClass(), bytecodeTextifier);
 			final String processedClass = process(bytecodeTextifier, classContent.getClassContent());
+			log.debug("Finished processing class {} with {}", classContent.getLoadedClass(), bytecodeTextifier);
 			processingPlaceholderTask.cancel(false);
 			Platform.runLater(() -> {
 				// Don't update if the class was switched again
@@ -288,6 +289,9 @@ public class CurrentClassController {
 				// Trigger update immediately
 				codeAreaHelper.triggerHighlightUpdate(codeArea);
 				onProcess.accept(newText);
+				log.debug("Finished applying processor result for {} with processor {}",
+				          classContent.getLoadedClass(),
+				          bytecodeTextifier);
 			});
 		});
 	}

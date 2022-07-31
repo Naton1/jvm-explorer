@@ -10,6 +10,7 @@ import com.github.naton1.jvmexplorer.helper.RemoteCodeHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
+import com.github.naton1.jvmexplorer.protocol.PatchResult;
 import com.github.naton1.jvmexplorer.settings.JvmExplorerSettings;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -505,12 +506,13 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 			log.warn("Failed to read file", ex);
 			return;
 		}
-		final boolean replaced = clientHandler.replaceClass(activeJvm, loadedClass, contents);
+		final PatchResult replaced = clientHandler.replaceClass(activeJvm, loadedClass, contents);
 		Platform.runLater(() -> {
-			final Alert.AlertType alertType = replaced ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR;
-			final String title = replaced ? "Replaced Class" : "Replace Failed";
-			final String header = replaced ? "Successfully replaced class" : "Class replacement failed";
-			alertHelper.show(alertType, title, header);
+			if (!replaced.isSuccess()) {
+				alertHelper.showError("Replace Failed", replaced.getMessage());
+				return;
+			}
+			alertHelper.show(Alert.AlertType.INFORMATION, "Replaced Class", "Successfully replaced class");
 		});
 	}
 
