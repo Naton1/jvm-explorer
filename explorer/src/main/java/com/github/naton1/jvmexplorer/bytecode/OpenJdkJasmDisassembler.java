@@ -1,13 +1,13 @@
 package com.github.naton1.jvmexplorer.bytecode;
 
 import lombok.extern.slf4j.Slf4j;
+import org.openjdk.asmtools.jdis.Main;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class OpenJdkJasmDisassembler implements Disassembler {
@@ -15,24 +15,21 @@ public class OpenJdkJasmDisassembler implements Disassembler {
 	@Override
 	public String process(byte[] bytecode) {
 		try {
-			final String jar = OpenJdkTools.getJarLocation();
 			final File tmpFile = File.createTempFile("disassemble", ".class");
 			Files.write(tmpFile.toPath(), bytecode);
-			final Process process = new ProcessBuilder().command(
-					System.getProperty("java.home") + File.separator + "bin" + File.separator + "java",
-					"-jar",
-					jar,
-					"jdis",
-					tmpFile.getAbsolutePath()).redirectErrorStream(true).start();
-			try (BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-				return stdout.lines().collect(Collectors.joining(System.lineSeparator()));
+			final StringWriter outStringWriter = new StringWriter();
+			final PrintWriter out = new PrintWriter(outStringWriter);
+			final StringWriter errStringWriter = new StringWriter();
+			final PrintWriter err = new PrintWriter(errStringWriter);
+			final Main main = new Main(out, err, "jdis");
+			final String[] args = { tmpFile.getAbsolutePath() };
+			final boolean result = main.disasm(args);
+			if (!result) {
+				throw new IllegalStateException(outStringWriter + System.lineSeparator() + errStringWriter);
 			}
-			finally {
-				// Make sure it ends no matter what
-				process.destroyForcibly();
-			}
+			return outStringWriter.toString();
 		}
-		catch (IOException e) {
+		catch (IOException | IllegalStateException e) {
 			log.warn("Disassembly failed", e);
 			return null;
 		}
