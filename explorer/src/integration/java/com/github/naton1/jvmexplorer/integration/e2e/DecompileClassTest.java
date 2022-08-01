@@ -5,9 +5,12 @@ import com.github.naton1.jvmexplorer.integration.helper.TestJvm;
 import com.github.naton1.jvmexplorer.integration.programs.SleepForeverProgram;
 import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TreeTableView;
 import javafx.scene.control.TreeView;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.testfx.api.FxRobot;
 
@@ -23,8 +26,21 @@ class DecompileClassTest extends EndToEndTest {
 			final TreeView<?> treeView = fxRobotPlus.lookup("#classes").queryAs(TreeView.class);
 			final String simpleName = ClassNameHelper.getSimpleName(testJvm.getMainClassName());
 			fxRobotPlus.waitUntil(() -> fxRobotPlus.select(treeView, simpleName), 5000);
+
+			// Verify decompile
 			final CodeArea classFile = fxRobotPlus.lookup("#classFile").queryAs(CodeArea.class);
 			fxRobotPlus.waitUntil(() -> classFile.getText().contains("class " + simpleName), 5000);
+
+			// Verify disassemble
+			final TabPane tabPane = fxRobotPlus.lookup("#currentClassTabPane").queryAs(TabPane.class);
+			tabPane.getSelectionModel().select(1); // select bytecode
+			final CodeArea bytecode = fxRobotPlus.lookup("#bytecode").queryAs(CodeArea.class);
+			fxRobotPlus.waitUntil(() -> classFile.getText().contains("class " + simpleName), 5000);
+
+			// Verify fields
+			tabPane.getSelectionModel().select(2); // select fields
+			final TreeTableView<?> classFields = fxRobotPlus.lookup("#classFields").queryAs(TreeTableView.class);
+			Assertions.assertTrue(classFields.getRoot().getChildren().size() > 0);
 		}
 	}
 

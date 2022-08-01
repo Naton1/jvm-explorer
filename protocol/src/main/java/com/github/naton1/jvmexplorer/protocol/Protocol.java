@@ -57,6 +57,7 @@ public class Protocol {
 		kryo.register(JvmClient.class);
 		kryo.register(JvmConnection.class);
 		kryo.register(PacketType.class);
+		kryo.register(PatchResult.class);
 		kryo.register(WrappedObject.class);
 
 		// Setup all primitives for field reading/writing

@@ -4,8 +4,8 @@ import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.bytecode.Assembler;
 import com.github.naton1.jvmexplorer.bytecode.AssemblyException;
 import com.github.naton1.jvmexplorer.bytecode.BytecodeTextifier;
-import com.github.naton1.jvmexplorer.bytecode.JasmAssembler;
-import com.github.naton1.jvmexplorer.bytecode.JasmDisassembler;
+import com.github.naton1.jvmexplorer.bytecode.OpenJdkJasmAssembler;
+import com.github.naton1.jvmexplorer.bytecode.OpenJdkJasmDisassembler;
 import com.github.naton1.jvmexplorer.bytecode.QuiltflowerDecompiler;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.CodeAreaHelper;
@@ -171,7 +171,7 @@ public class CurrentClassController {
 			}
 			final LoadedClass loadedClass = classContent.getLoadedClass();
 			executorService.submit(() -> {
-				final Assembler assembler = new JasmAssembler(loadedClass.getName());
+				final Assembler assembler = new OpenJdkJasmAssembler();
 				try {
 					final byte[] assembledClassFile = assembler.assemble(text);
 					final PatchResult result = clientHandler.replaceClass(runningJvm, loadedClass, assembledClassFile);
@@ -233,7 +233,7 @@ public class CurrentClassController {
 		}
 		else {
 			processBytecode(newv, new QuiltflowerDecompiler(), classFile, decompiledClass::set);
-			processBytecode(newv, new JasmDisassembler(), bytecode, newDisassembledClass -> {
+			processBytecode(newv, new OpenJdkJasmDisassembler(), bytecode, newDisassembledClass -> {
 				allowBytecodeEditing.set(!PROCESSOR_FAILED.equals(newDisassembledClass));
 				disassembledClass.set(newDisassembledClass);
 			});

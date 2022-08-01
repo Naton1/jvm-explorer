@@ -6,10 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.Objects;
 
-class JasmDisassemblerTest {
-
-	// These are kind of testing a third party library, but it gives us guarantees that the adapter will work
-	// and that we can disassemble and reassemble without issue.
+abstract class AssemblyTest {
 
 	@Test
 	void givenValidClass_whenDisassemble_classDisassembled() throws IOException {
@@ -17,25 +14,37 @@ class JasmDisassemblerTest {
 		                                                          .getResourceAsStream("SleepForever.class"))
 		                                .readAllBytes();
 
-		final JasmDisassembler jasmDisassembler = new JasmDisassembler();
-		final String disassembledClassFile = jasmDisassembler.process(classFile);
+		final Disassembler disassembler = getDisassembler();
+		final String disassembledClassFile = disassembler.process(classFile);
 
 		Assertions.assertTrue(disassembledClassFile.contains("public class SleepForever"));
 	}
 
+	abstract Disassembler getDisassembler();
+
 	@Test
-	void givenValidClass_whenDisassembleThenAssemble_thenResultValid() throws IOException {
+	void givenValidClass_whenDisassembleThenAssemble_thenResultValid() throws Exception {
 		final byte[] classFile = Objects.requireNonNull(getClass().getClassLoader()
 		                                                          .getResourceAsStream("SleepForever.class"))
 		                                .readAllBytes();
 
-		final JasmDisassembler asmDisassembler = new JasmDisassembler();
-		final String disassembledClassFile = asmDisassembler.process(classFile);
+		final Disassembler disassembler = getDisassembler();
+		final String disassembledClassFile = disassembler.process(classFile);
 
-		final JasmAssembler jasmAssembler = new JasmAssembler("SleepForever");
-		final byte[] assembledClassFile = jasmAssembler.assemble(disassembledClassFile);
+		final Assembler assembler = getAssembler();
+		final byte[] assembledClassFile = assembler.assemble(disassembledClassFile);
 
 		Assertions.assertTrue(assembledClassFile.length > 0);
+
+		// Let's verify we can load it
+		final Class<?> klass = new ClassLoader() {
+			public Class<?> findClass(String name) {
+				return defineClass(name, assembledClassFile, 0, assembledClassFile.length);
+			}
+		}.loadClass("SleepForever");
+		Assertions.assertNotNull(klass);
 	}
+
+	abstract Assembler getAssembler();
 
 }
