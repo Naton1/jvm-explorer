@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -25,8 +26,12 @@ public class OpenJdkJasmAssembler implements Assembler {
 					"jasm",
 					"-d",
 					tempDirectory.toAbsolutePath().toString(),
-					tmpFile.getAbsolutePath()).inheritIO().start();
-			// should never take this long, but let's give it some time in case the class is massive
+					tmpFile.getAbsolutePath()).redirectErrorStream(true).start();
+			final byte[] output;
+			try (final InputStream inputStream = process.getInputStream()) {
+				output = inputStream.readAllBytes();
+			}
+			// should never take this long, but let's give it some time in case
 			final boolean finished = process.waitFor(30, TimeUnit.SECONDS);
 			if (!finished) {
 				process.destroyForcibly();
@@ -35,7 +40,8 @@ public class OpenJdkJasmAssembler implements Assembler {
 			final Path outputFile = Files.walk(tempDirectory)
 			                             .filter(p -> p.toFile().isFile())
 			                             .findFirst()
-			                             .orElseThrow(IllegalStateException::new);
+			                             .orElseThrow(() -> new IllegalStateException(
+					                             "Failed to assemble file: " + new String(output)));
 			return Files.readAllBytes(outputFile);
 		}
 		catch (IOException | InterruptedException | IllegalStateException e) {

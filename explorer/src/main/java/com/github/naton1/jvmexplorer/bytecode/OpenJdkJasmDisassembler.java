@@ -23,7 +23,7 @@ public class OpenJdkJasmDisassembler implements Disassembler {
 					"-jar",
 					jar,
 					"jdis",
-					tmpFile.getAbsolutePath()).start();
+					tmpFile.getAbsolutePath()).redirectErrorStream(true).start();
 			try (BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
 				return stdout.lines().collect(Collectors.joining(System.lineSeparator()));
 			}
