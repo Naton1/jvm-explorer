@@ -24,24 +24,6 @@ public class AgentConfiguration {
 	private final int logLevel;
 	private final String logFilePath;
 
-	public String toAgentArgs() {
-		final Properties properties = new Properties();
-		properties.setProperty(PORT_KEY, Integer.toString(port));
-		properties.setProperty(IDENTIFIER_KEY, identifier);
-		properties.setProperty(HOST_NAME_KEY, hostName);
-		properties.setProperty(LOG_LEVEL_KEY, Integer.toString(logLevel));
-		properties.setProperty(LOG_FILE_PATH_KEY, logFilePath);
-		final StringWriter stringWriter = new StringWriter();
-		try {
-			properties.store(stringWriter, null);
-		}
-		catch (IOException e) {
-			// Should never happen
-			throw new IllegalStateException(e);
-		}
-		return stringWriter.toString();
-	}
-
 	public static AgentConfiguration parseAgentArgs(String agentArgs) {
 		final Properties properties = new Properties();
 		try {
@@ -58,6 +40,24 @@ public class AgentConfiguration {
 		                         .logLevel(Integer.parseInt(properties.getProperty(LOG_LEVEL_KEY)))
 		                         .logFilePath(properties.getProperty(LOG_FILE_PATH_KEY))
 		                         .build();
+	}
+
+	public String toAgentArgs() {
+		final Properties properties = new Properties();
+		properties.setProperty(PORT_KEY, Integer.toString(port));
+		properties.setProperty(IDENTIFIER_KEY, identifier);
+		properties.setProperty(HOST_NAME_KEY, hostName);
+		properties.setProperty(LOG_LEVEL_KEY, Integer.toString(logLevel));
+		properties.setProperty(LOG_FILE_PATH_KEY, logFilePath);
+		final StringWriter stringWriter = new StringWriter();
+		try {
+			properties.store(stringWriter, null);
+		}
+		catch (IOException e) {
+			// Should never happen
+			throw new IllegalStateException(e);
+		}
+		return stringWriter.toString();
 	}
 
 }

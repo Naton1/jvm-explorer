@@ -72,6 +72,26 @@ public class RemoteCodeExecutorController {
 		setupContextMenu();
 	}
 
+	private void setupContextMenu() {
+		final ContextMenu contextMenu = new ContextMenu();
+
+		final MenuItem run = new MenuItem("Execute Code");
+		run.setOnAction(e -> runButton.fire());
+
+		final KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.R, KeyCodeCombination.CONTROL_DOWN);
+		run.setAccelerator(shortcut);
+
+		code.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			if (shortcut.match(e)) {
+				run.fire();
+			}
+		});
+
+		contextMenu.getItems().add(run);
+
+		code.setContextMenu(contextMenu);
+	}
+
 	@FXML
 	void onExecute() {
 		output.setText("Compiling...");
@@ -102,30 +122,6 @@ public class RemoteCodeExecutorController {
 		});
 	}
 
-	private void setupContextMenu() {
-		final ContextMenu contextMenu = new ContextMenu();
-
-		final MenuItem run = new MenuItem("Execute Code");
-		run.setOnAction(e -> runButton.fire());
-
-		final KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.R, KeyCodeCombination.CONTROL_DOWN);
-		run.setAccelerator(shortcut);
-
-		code.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (shortcut.match(e)) {
-				run.fire();
-			}
-		});
-
-		contextMenu.getItems().add(run);
-
-		code.setContextMenu(contextMenu);
-	}
-
-	private void setOutputText(String header, String body) {
-		output.setText(header + System.lineSeparator() + System.lineSeparator() + body);
-	}
-
 	private int getJavaVersion() {
 		try {
 			String version = runningJvm.getSystemProperties().getProperty("java.version");
@@ -144,6 +140,10 @@ public class RemoteCodeExecutorController {
 			log.warn("Failed to get java version for remote code execution", e);
 			return Runtime.version().feature();
 		}
+	}
+
+	private void setOutputText(String header, String body) {
+		output.setText(header + System.lineSeparator() + System.lineSeparator() + body);
 	}
 
 }

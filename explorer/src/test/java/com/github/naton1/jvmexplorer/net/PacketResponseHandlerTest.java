@@ -39,6 +39,10 @@ class PacketResponseHandlerTest {
 		Assertions.assertEquals(2000, results.size());
 	}
 
+	private String[] createPackets(int len) {
+		return IntStream.range(0, len).mapToObj(i -> UUID.randomUUID().toString()).toArray(String[]::new);
+	}
+
 	@Test
 	void givenValidPackets_whenStreamPacketsAndEndReceivedBeforeAllPackets_thenStreamProcessedSuccessfully()
 			throws InterruptedException {
@@ -121,10 +125,6 @@ class PacketResponseHandlerTest {
 		Assertions.assertTrue(System.currentTimeMillis() < start + 1000);
 
 		Assertions.assertFalse(cleanupCalled.get()); // cleanup not called on timeout
-	}
-
-	private String[] createPackets(int len) {
-		return IntStream.range(0, len).mapToObj(i -> UUID.randomUUID().toString()).toArray(String[]::new);
 	}
 
 }

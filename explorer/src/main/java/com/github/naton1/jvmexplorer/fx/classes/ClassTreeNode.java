@@ -27,6 +27,10 @@ public class ClassTreeNode implements Comparable<ClassTreeNode> {
 	private final String packageSegment;
 	private final ClassLoaderDescriptor classLoaderDescriptor;
 
+	public static ClassTreeNode root() {
+		return new ClassTreeNode(null, null, null);
+	}
+
 	public FilterableTreeItem<ClassTreeNode> toTreeItem() {
 		final FilterableTreeItem<ClassTreeNode> treeItem = new FilterableTreeItem<>(this);
 		children.forEach((key, value) -> treeItem.getSourceChildren().add(value.toTreeItem()));
@@ -39,6 +43,14 @@ public class ClassTreeNode implements Comparable<ClassTreeNode> {
 		return children.computeIfAbsent(key, k -> ClassTreeNode.ofPackage(name));
 	}
 
+	private String getKeyForPackage(String packagePart) {
+		return ClassTreeNode.Type.PACKAGE.name() + ":" + packagePart;
+	}
+
+	private static ClassTreeNode ofPackage(String packagePart) {
+		return new ClassTreeNode(null, packagePart, null);
+	}
+
 	public ClassTreeNode addClass(LoadedClass loadedClass) {
 		final String key = getKeyForClass(loadedClass);
 		final ClassTreeNode classNode = ClassTreeNode.ofClass(loadedClass);
@@ -49,9 +61,25 @@ public class ClassTreeNode implements Comparable<ClassTreeNode> {
 		return classNode;
 	}
 
+	private String getKeyForClass(LoadedClass loadedClass) {
+		return ClassTreeNode.Type.CLASS.name() + ":" + loadedClass.getSimpleName();
+	}
+
+	private static ClassTreeNode ofClass(LoadedClass loadedClass) {
+		return new ClassTreeNode(loadedClass, loadedClass.getSimpleName(), null);
+	}
+
 	public ClassTreeNode addClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
 		final String key = getKeyForClassLoader(classLoaderDescriptor);
 		return children.computeIfAbsent(key, k -> ClassTreeNode.ofClassLoader(classLoaderDescriptor));
+	}
+
+	private String getKeyForClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
+		return ClassTreeNode.Type.CLASSLOADER.name() + ":" + classLoaderDescriptor.getId();
+	}
+
+	private static ClassTreeNode ofClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
+		return new ClassTreeNode(null, classLoaderDescriptor.getSimpleClassName(), classLoaderDescriptor);
 	}
 
 	// Mainly for debugging purposes
@@ -103,34 +131,6 @@ public class ClassTreeNode implements Comparable<ClassTreeNode> {
 		Type(String imagePath) {
 			image = new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(imagePath)));
 		}
-	}
-
-	public static ClassTreeNode root() {
-		return new ClassTreeNode(null, null, null);
-	}
-
-	private static ClassTreeNode ofClass(LoadedClass loadedClass) {
-		return new ClassTreeNode(loadedClass, loadedClass.getSimpleName(), null);
-	}
-
-	private static ClassTreeNode ofPackage(String packagePart) {
-		return new ClassTreeNode(null, packagePart, null);
-	}
-
-	private static ClassTreeNode ofClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
-		return new ClassTreeNode(null, classLoaderDescriptor.getSimpleClassName(), classLoaderDescriptor);
-	}
-
-	private String getKeyForClass(LoadedClass loadedClass) {
-		return ClassTreeNode.Type.CLASS.name() + ":" + loadedClass.getSimpleName();
-	}
-
-	private String getKeyForPackage(String packagePart) {
-		return ClassTreeNode.Type.PACKAGE.name() + ":" + packagePart;
-	}
-
-	private String getKeyForClassLoader(ClassLoaderDescriptor classLoaderDescriptor) {
-		return ClassTreeNode.Type.CLASSLOADER.name() + ":" + classLoaderDescriptor.getId();
 	}
 
 }

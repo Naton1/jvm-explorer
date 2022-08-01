@@ -16,7 +16,6 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.xml.stream.EventFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;

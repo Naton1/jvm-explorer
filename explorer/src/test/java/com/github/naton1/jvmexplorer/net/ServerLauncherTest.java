@@ -41,11 +41,8 @@ class ServerLauncherTest {
 		try (final ServerSocket serverSocket = new ServerSocket(0)) {
 			serverSocket.setReuseAddress(true);
 			final int port = serverSocket.getLocalPort();
-			Mockito.when(openPortProvider.getOpenPort())
-			       .thenReturn(port) // Give taken port a few times
-			       .thenReturn(port)
-			       .thenReturn(port)
-			       .thenAnswer(invocation -> {
+			Mockito.when(openPortProvider.getOpenPort()).thenReturn(port) // Give taken port a few times
+			       .thenReturn(port).thenReturn(port).thenAnswer(invocation -> {
 				       serverSocket.close(); // Release port, and return it again
 				       return port;
 			       });

@@ -91,11 +91,6 @@ public class CodeAreaHelper {
 		});
 	}
 
-	public void triggerHighlightUpdate(CodeArea codeArea) {
-		final Task<StyleSpans<Collection<String>>> initialTask = computeHighlighting(codeArea);
-		initialTask.setOnSucceeded(e -> applyHighlighting(codeArea, initialTask.getValue()));
-	}
-
 	private Task<StyleSpans<Collection<String>>> computeHighlighting(CodeArea codeArea) {
 		final String text = codeArea.getText();
 		final Task<StyleSpans<Collection<String>>> task = new Task<>() {
@@ -110,6 +105,11 @@ public class CodeAreaHelper {
 
 	private void applyHighlighting(CodeArea codeArea, StyleSpans<Collection<String>> highlighting) {
 		codeArea.setStyleSpans(0, highlighting);
+	}
+
+	public void triggerHighlightUpdate(CodeArea codeArea) {
+		final Task<StyleSpans<Collection<String>>> initialTask = computeHighlighting(codeArea);
+		initialTask.setOnSucceeded(e -> applyHighlighting(codeArea, initialTask.getValue()));
 	}
 
 }

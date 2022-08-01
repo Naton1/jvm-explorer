@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientLauncher {
 
 	public Client launch(ScheduledExecutorService executorService, AgentConfiguration agentConfiguration,
-	                   Instrumentation instrumentation, AgentFileLogger logger) throws IOException {
+	                     Instrumentation instrumentation, AgentFileLogger logger) throws IOException {
 		final Client client = new Client(Protocol.WRITE_BUFFER_SIZE, Protocol.OBJECT_BUFFER_SIZE);
 		setupRmi(client, executorService, agentConfiguration.getIdentifier(), instrumentation);
 		startClient(client, agentConfiguration.getHostName(), agentConfiguration.getPort());

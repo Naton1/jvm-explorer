@@ -6,26 +6,30 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import org.fxmisc.richtext.CodeArea?>
-
-<VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefWidth="900.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.naton1.jvmexplorer.fx.compile.RemoteCodeExecutorController">
-   <children>
-      <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="400.0" VBox.vgrow="ALWAYS">
-         <children>
-            <CodeArea fx:id="code" VBox.vgrow="ALWAYS" />
-         </children>
-      </VBox>
-      <HBox alignment="CENTER_LEFT">
-         <children>
-            <Button fx:id="runButton" mnemonicParsing="false" onAction="#onExecute" text="Execute Code" />
-         </children>
-         <VBox.margin>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </VBox.margin>
-      </HBox>
-      <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
-         <children>
-            <TextArea fx:id="output" editable="false" prefHeight="150.0" promptText="Implement the 'call' method above, and click 'Execute Code'" HBox.hgrow="ALWAYS" />
-         </children>
-      </HBox>
-   </children>
+<VBox xmlns:fx="http://javafx.com/fxml/1" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"
+      minHeight="-Infinity"
+      minWidth="-Infinity" prefWidth="900.0" xmlns="http://javafx.com/javafx/11.0.1"
+      fx:controller="com.github.naton1.jvmexplorer.fx.compile.RemoteCodeExecutorController">
+    <children>
+        <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="400.0"
+              VBox.vgrow="ALWAYS">
+            <children>
+                <CodeArea fx:id="code" VBox.vgrow="ALWAYS"/>
+            </children>
+        </VBox>
+        <HBox alignment="CENTER_LEFT">
+            <children>
+                <Button fx:id="runButton" mnemonicParsing="false" onAction="#onExecute" text="Execute Code"/>
+            </children>
+            <VBox.margin>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </VBox.margin>
+        </HBox>
+        <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+            <children>
+                <TextArea fx:id="output" editable="false" prefHeight="150.0"
+                          promptText="Implement the 'call' method above, and click 'Execute Code'" HBox.hgrow="ALWAYS"/>
+            </children>
+        </HBox>
+    </children>
 </VBox>

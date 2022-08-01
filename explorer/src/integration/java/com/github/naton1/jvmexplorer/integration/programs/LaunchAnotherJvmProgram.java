@@ -8,7 +8,9 @@ public class LaunchAnotherJvmProgram {
 		final long pid = TestJvm.builder()
 		                        .sourceClass(SleepForeverProgram.class)
 		                        .jvmArg("-XX:+DisableAttachMechanism")
-		                        .build().getProcess().pid();
+		                        .build()
+		                        .getProcess()
+		                        .pid();
 		System.out.println(pid);
 	}
 

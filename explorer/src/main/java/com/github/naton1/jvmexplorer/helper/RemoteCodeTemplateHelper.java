@@ -15,20 +15,6 @@ public class RemoteCodeTemplateHelper {
 		return templateWithClass;
 	}
 
-	private String addClassName(String template, String className) {
-		return replace(template, "class-name", className);
-	}
-
-	private String addPackage(String template, String packageName) {
-		final String packageStatement =
-				packageName != null && !packageName.isEmpty() ? ("package " + packageName + ";") : "";
-		return replace(template, "package", packageStatement);
-	}
-
-	private String replace(String template, String templateKey, String replacement) {
-		return template.replaceFirst("<" + templateKey + ">", replacement);
-	}
-
 	private String load() {
 		try {
 			final byte[] templateBytes = Objects.requireNonNull(getClass().getClassLoader()
@@ -41,6 +27,20 @@ public class RemoteCodeTemplateHelper {
 			log.error("Failed to load template resource", e);
 			throw new IllegalStateException(e);
 		}
+	}
+
+	private String addPackage(String template, String packageName) {
+		final String packageStatement =
+				packageName != null && !packageName.isEmpty() ? ("package " + packageName + ";") : "";
+		return replace(template, "package", packageStatement);
+	}
+
+	private String addClassName(String template, String className) {
+		return replace(template, "class-name", className);
+	}
+
+	private String replace(String template, String templateKey, String replacement) {
+		return template.replaceFirst("<" + templateKey + ">", replacement);
 	}
 
 }

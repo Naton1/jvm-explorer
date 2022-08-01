@@ -23,7 +23,8 @@ public class ExportHelper {
 
 	private final ClientHandler clientHandler;
 
-	public boolean export(RunningJvm jvm, List<LoadedClass> loadedClasses, File outputJar, Consumer<Integer> currentProgress) {
+	public boolean export(RunningJvm jvm, List<LoadedClass> loadedClasses, File outputJar,
+	                      Consumer<Integer> currentProgress) {
 		log.debug("Exporting {} files in {} to {}", loadedClasses.size(), jvm, outputJar);
 		try {
 			Files.deleteIfExists(outputJar.toPath());
@@ -37,19 +38,19 @@ public class ExportHelper {
 		try (JarOutputStream jarOutputStream = new JarOutputStream(Files.newOutputStream(outputJar.toPath()))) {
 			// Note - parallel stream runs in common fork join pool despite these being io bound tasks
 			loadedClasses.stream()
-			          .parallel()
-			          .map(loadedClass -> new Pair<>(loadedClass, clientHandler.getClassBytes(jvm, loadedClass)))
-			          .forEach(pair -> {
-						  log.debug("Exporting: {}", loadedClasses);
-				          synchronized (count) {
-					          // Possible race condition - count could be incremented before another thread, but the
-					          // other thread could run currentProgress first. Therefore, we synchronize.
-					          currentProgress.accept(count.incrementAndGet());
-				          }
-				          final String name = pair.getKey().getName().replace('.', '/') + ".class";
-				          final byte[] content = pair.getValue();
-				          write(name, content, jarOutputStream);
-			          });
+			             .parallel()
+			             .map(loadedClass -> new Pair<>(loadedClass, clientHandler.getClassBytes(jvm, loadedClass)))
+			             .forEach(pair -> {
+				             log.debug("Exporting: {}", loadedClasses);
+				             synchronized (count) {
+					             // Possible race condition - count could be incremented before another thread, but the
+					             // other thread could run currentProgress first. Therefore, we synchronize.
+					             currentProgress.accept(count.incrementAndGet());
+				             }
+				             final String name = pair.getKey().getName().replace('.', '/') + ".class";
+				             final byte[] content = pair.getValue();
+				             write(name, content, jarOutputStream);
+			             });
 			log.debug("Jar created: {} with {} classes", outputJar, count.get());
 			return true;
 		}

@@ -80,10 +80,7 @@ class CompilerTest {
 		final Compiler compiler = new Compiler();
 
 		// Target java 8. This application only runs on java 11+ so it must target a lower version.
-		final CompileResult compileResult = compiler.compile(8,
-		                                                     "Test",
-		                                                     "public class Test {}",
-		                                                     bytecodeProvider);
+		final CompileResult compileResult = compiler.compile(8, "Test", "public class Test {}", bytecodeProvider);
 
 		Assertions.assertTrue(compileResult.isSuccess(), compileResult.getStdOut());
 		Assertions.assertTrue(compileResult.getClassContent().length > 0);

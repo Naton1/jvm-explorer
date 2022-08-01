@@ -19,6 +19,14 @@ class FilterableTreeItemTest {
 		Assertions.assertNotEquals(sourceItems, visibleItems);
 	}
 
+	private FilterableTreeItem<String> buildTree() {
+		final FilterableTreeItem<String> root = new FilterableTreeItem<>();
+		final FilterableTreeItem<String> child = new FilterableTreeItem<>("hmm");
+		child.getSourceChildren().addAll(new FilterableTreeItem<>("value"));
+		root.getSourceChildren().addAll(child, new FilterableTreeItem<>("test"), new FilterableTreeItem<>("asdf"));
+		return root;
+	}
+
 	@Test
 	void testStreamVisible() {
 		final FilterableTreeItem<String> root = buildTree();
@@ -37,14 +45,6 @@ class FilterableTreeItemTest {
 		final long sourceItems = root.streamSource().count();
 
 		Assertions.assertEquals(4, sourceItems);
-	}
-
-	private FilterableTreeItem<String> buildTree() {
-		final FilterableTreeItem<String> root = new FilterableTreeItem<>();
-		final FilterableTreeItem<String> child = new FilterableTreeItem<>("hmm");
-		child.getSourceChildren().addAll(new FilterableTreeItem<>("value"));
-		root.getSourceChildren().addAll(child, new FilterableTreeItem<>("test"), new FilterableTreeItem<>("asdf"));
-		return root;
 	}
 
 }

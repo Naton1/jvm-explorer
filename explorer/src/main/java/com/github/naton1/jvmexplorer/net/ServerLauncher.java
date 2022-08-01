@@ -20,7 +20,8 @@ public class ServerLauncher {
 
 	public JvmExplorerServer launch(ScheduledExecutorService executorService, ClientHandler clientHandler) {
 		setupLogging();
-		final JvmExplorerServer server = new JvmExplorerServer(Protocol.WRITE_BUFFER_SIZE, Protocol.OBJECT_BUFFER_SIZE) {
+		final JvmExplorerServer server = new JvmExplorerServer(Protocol.WRITE_BUFFER_SIZE,
+		                                                       Protocol.OBJECT_BUFFER_SIZE) {
 			protected Connection newConnection() {
 				return new JvmClientImpl(executorService);
 			}

@@ -18,8 +18,7 @@ public class TestJvm implements AutoCloseable {
 
 	@Builder
 	private TestJvm(Class<?> sourceClass, @Singular List<String> jvmArgs, @Singular List<String> programArgs,
-	                boolean handleIOManually)
-			throws Exception {
+	                boolean handleIOManually) throws Exception {
 		this.mainClassName = sourceClass.getName();
 		final URL base = sourceClass.getProtectionDomain().getCodeSource().getLocation();
 		final File workingDirectory = new File(base.toURI());
@@ -35,11 +34,14 @@ public class TestJvm implements AutoCloseable {
 		else {
 			// There is no input mechanism
 			// Also send error to std out to make it easier
-			processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT)
-					.redirectErrorStream(true);
+			processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT).redirectErrorStream(true);
 		}
 		this.process = processBuilder.start();
 		System.out.println("Launched JVM with class: " + sourceClass + ", pid: " + this.process.pid());
+	}
+
+	public static TestJvm of(Class<?> klass) throws Exception {
+		return TestJvm.builder().sourceClass(klass).build();
 	}
 
 	@Override
@@ -62,10 +64,6 @@ public class TestJvm implements AutoCloseable {
 
 	public Process getProcess() {
 		return process;
-	}
-
-	public static TestJvm of(Class<?> klass) throws Exception {
-		return TestJvm.builder().sourceClass(klass).build();
 	}
 
 }

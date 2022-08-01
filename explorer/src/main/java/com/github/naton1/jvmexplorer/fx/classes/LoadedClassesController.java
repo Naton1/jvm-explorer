@@ -146,17 +146,6 @@ public class LoadedClassesController {
 		});
 	}
 
-	private String buildAgentArgs(RunningJvm runningJvm) {
-		return AgentConfiguration.builder()
-		                         .hostName("localhost")
-		                         .port(serverPort)
-		                         .identifier(runningJvm.toIdentifier())
-		                         .logLevel(Log.LEVEL_DEBUG)
-		                         .logFilePath(AGENT_LOG_FILE.getAbsolutePath())
-		                         .build()
-		                         .toAgentArgs();
-	}
-
 	private void setupClassesCore() {
 		classes.getSelectionModel()
 		       .selectedItemProperty()
@@ -195,6 +184,17 @@ public class LoadedClassesController {
 		                                                   agentLoading));
 		treeViewPlaceholderSkin.placeholderProperty().setValue(placeholderLabel);
 		classes.setSkin(treeViewPlaceholderSkin);
+	}
+
+	private String buildAgentArgs(RunningJvm runningJvm) {
+		return AgentConfiguration.builder()
+		                         .hostName("localhost")
+		                         .port(serverPort)
+		                         .identifier(runningJvm.toIdentifier())
+		                         .logLevel(Log.LEVEL_DEBUG)
+		                         .logFilePath(AGENT_LOG_FILE.getAbsolutePath())
+		                         .build()
+		                         .toAgentArgs();
 	}
 
 	private void onSelectedClassChange(TreeItem<ClassTreeNode> old, TreeItem<ClassTreeNode> newv) {

@@ -91,6 +91,19 @@ public class FxRobotPlus extends FxRobot {
 		waitUntil(() -> fxRobot.lookup(query).tryQuery().isPresent(), 5000);
 	}
 
+	public void waitUntil(BooleanSupplier condition, long timeoutMs) throws RuntimeException {
+		final long end = System.currentTimeMillis() + timeoutMs;
+		while (System.currentTimeMillis() < end) {
+			final AtomicBoolean success = new AtomicBoolean(false);
+			interact(() -> success.set(condition.getAsBoolean()));
+			if (success.get()) {
+				return;
+			}
+			sleep(5);
+		}
+		throw new IllegalStateException("Condition not reached - follow stack trace to see condition");
+	}
+
 	public void waitForStageExists(String titleRegex) {
 		waitUntil(() -> fxRobot.listWindows()
 		                       .stream()
@@ -109,19 +122,6 @@ public class FxRobotPlus extends FxRobot {
 			sleep(10);
 		}
 		throw new IllegalStateException("No result found after " + timeoutMs + " ms");
-	}
-
-	public void waitUntil(BooleanSupplier condition, long timeoutMs) throws RuntimeException {
-		final long end = System.currentTimeMillis() + timeoutMs;
-		while (System.currentTimeMillis() < end) {
-			final AtomicBoolean success = new AtomicBoolean(false);
-			interact(() -> success.set(condition.getAsBoolean()));
-			if (success.get()) {
-				return;
-			}
-			sleep(5);
-		}
-		throw new IllegalStateException("Condition not reached - follow stack trace to see condition");
 	}
 
 }

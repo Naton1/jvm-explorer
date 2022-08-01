@@ -26,20 +26,6 @@ public class ProvidedJvmFileManager extends ForwardingJavaFileManager<StandardJa
 	}
 
 	@Override
-	public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className,
-	                                           JavaFileObject.Kind kind, FileObject sibling) {
-		return this.output = new OutputJavaFileObject(className, kind);
-	}
-
-	@Override
-	public String inferBinaryName(Location location, JavaFileObject file) {
-		if (file instanceof ProvidedJavaFileObject) {
-			return file.toString();
-		}
-		return super.inferBinaryName(location, file);
-	}
-
-	@Override
 	public Iterable<JavaFileObject> list(Location location, String packageName, Set<JavaFileObject.Kind> kinds,
 	                                     boolean recurse) throws IOException {
 		final Iterable<JavaFileObject> standardJavaFileObjects = fileManager.list(location,
@@ -59,6 +45,20 @@ public class ProvidedJvmFileManager extends ForwardingJavaFileManager<StandardJa
 		results.addAll(remoteClasses);
 
 		return results;
+	}
+
+	@Override
+	public String inferBinaryName(Location location, JavaFileObject file) {
+		if (file instanceof ProvidedJavaFileObject) {
+			return file.toString();
+		}
+		return super.inferBinaryName(location, file);
+	}
+
+	@Override
+	public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className,
+	                                           JavaFileObject.Kind kind, FileObject sibling) {
+		return this.output = new OutputJavaFileObject(className, kind);
 	}
 
 	public byte[] getOutputClassContent() {

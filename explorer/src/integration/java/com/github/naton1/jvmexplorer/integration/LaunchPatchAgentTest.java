@@ -29,6 +29,22 @@ class LaunchPatchAgentTest {
 		}
 	}
 
+	private long getLaunchedProcessId(TestJvm testJvm) throws Exception {
+		try (final BufferedReader br = new BufferedReader(new InputStreamReader(testJvm.getProcess().getInputStream()))
+		) {
+			return br.lines().filter(s -> s.matches("\\d+")).findFirst().map(Long::parseLong).orElseThrow();
+		}
+	}
+
+	private RunningJvm findLaunchedJvm(long pid) throws InterruptedException {
+		final RunningJvmLoader runningJvmLoader = new RunningJvmLoader();
+		return TestHelper.waitFor(() -> runningJvmLoader.list()
+		                                                .stream()
+		                                                .filter(r -> r.getId().equals(String.valueOf(pid)))
+		                                                .findFirst()
+		                                                .orElse(null), 5000);
+	}
+
 	@Test
 	void verifyAttachPatch() throws Exception {
 		final AgentPreparer agentPreparer = new AgentPreparer();
@@ -46,22 +62,6 @@ class LaunchPatchAgentTest {
 			runningJvm.loadAgent(agentPath, null);
 			ProcessHandle.of(pid).ifPresent(ProcessHandle::destroyForcibly);
 		}
-	}
-
-	private long getLaunchedProcessId(TestJvm testJvm) throws Exception {
-		try (final BufferedReader br = new BufferedReader(new InputStreamReader(testJvm.getProcess().getInputStream()))
-		) {
-			return br.lines().filter(s -> s.matches("\\d+")).findFirst().map(Long::parseLong).orElseThrow();
-		}
-	}
-
-	private RunningJvm findLaunchedJvm(long pid) throws InterruptedException {
-		final RunningJvmLoader runningJvmLoader = new RunningJvmLoader();
-		return TestHelper.waitFor(() -> runningJvmLoader.list()
-		                                                .stream()
-		                                                .filter(r -> r.getId().equals(String.valueOf(pid)))
-		                                                .findFirst()
-		                                                .orElse(null), 5000);
 	}
 
 }

@@ -116,6 +116,43 @@ class ClassTreeHelperTest {
 		Assertions.assertFalse(loadedClasses.contains(someOtherClass));
 	}
 
+	private FilterableTreeItem<ClassTreeNode> buildClassTree() {
+		final ClassTreeNode root = ClassTreeNode.root();
+		final ClassLoaderDescriptor someClassLoaderParent = ClassLoaderDescriptor.builder()
+		                                                                         .id("SomeClassLoaderParent")
+		                                                                         .description(
+				                                                                         "SomeClassLoaderParentDescription")
+		                                                                         .simpleClassName(
+				                                                                         "SomeClassLoaderParent")
+		                                                                         .build();
+		final ClassLoaderDescriptor someClassLoader = ClassLoaderDescriptor.builder()
+		                                                                   .id("SomeClassLoader")
+		                                                                   .description("SomeClassLoaderDescription")
+		                                                                   .simpleClassName("SomeClassLoader")
+		                                                                   .parent(someClassLoaderParent)
+		                                                                   .build();
+		final ClassLoaderDescriptor someOtherClassLoader = ClassLoaderDescriptor.builder()
+		                                                                        .id("SomeOtherClassLoader")
+		                                                                        .description(
+				                                                                        "SomeOtherClassLoaderDescription")
+		                                                                        .simpleClassName(
+																						"SomeOtherClassLoader")
+		                                                                        .build();
+		final LoadedClass someOtherClass = new LoadedClass("org.test.OtherTestClass", someOtherClassLoader);
+		root.addClassLoader(someOtherClassLoader).addPackage("org").addPackage("test").addClass(someOtherClass);
+		final ClassTreeNode parentClassLoader = root.addClassLoader(someClassLoaderParent);
+		parentClassLoader.addPackage("org")
+		                 .addPackage("test")
+		                 .addClass(new LoadedClass("org.test.Test", someClassLoaderParent));
+		final LoadedClass testClass = new LoadedClass("test.ing.stuff.TestClass", someClassLoader);
+		parentClassLoader.addClassLoader(someClassLoader)
+		                 .addPackage("test")
+		                 .addPackage("ing")
+		                 .addPackage("stuff")
+		                 .addClass(testClass);
+		return root.toTreeItem();
+	}
+
 	@Test
 	void testPackageName() {
 		final ClassTreeHelper classTreeHelper = new ClassTreeHelper();
@@ -210,43 +247,6 @@ class ClassTreeHelperTest {
 		final long count = classTreeHelper.getNodeClassLoaderTreeItemStream(someClass).count();
 
 		Assertions.assertEquals(2, count);
-	}
-
-	private FilterableTreeItem<ClassTreeNode> buildClassTree() {
-		final ClassTreeNode root = ClassTreeNode.root();
-		final ClassLoaderDescriptor someClassLoaderParent = ClassLoaderDescriptor.builder()
-		                                                                         .id("SomeClassLoaderParent")
-		                                                                         .description(
-				                                                                         "SomeClassLoaderParentDescription")
-		                                                                         .simpleClassName(
-				                                                                         "SomeClassLoaderParent")
-		                                                                         .build();
-		final ClassLoaderDescriptor someClassLoader = ClassLoaderDescriptor.builder()
-		                                                                   .id("SomeClassLoader")
-		                                                                   .description("SomeClassLoaderDescription")
-		                                                                   .simpleClassName("SomeClassLoader")
-		                                                                   .parent(someClassLoaderParent)
-		                                                                   .build();
-		final ClassLoaderDescriptor someOtherClassLoader = ClassLoaderDescriptor.builder()
-		                                                                        .id("SomeOtherClassLoader")
-		                                                                        .description(
-				                                                                        "SomeOtherClassLoaderDescription")
-		                                                                        .simpleClassName(
-																						"SomeOtherClassLoader")
-		                                                                        .build();
-		final LoadedClass someOtherClass = new LoadedClass("org.test.OtherTestClass", someOtherClassLoader);
-		root.addClassLoader(someOtherClassLoader).addPackage("org").addPackage("test").addClass(someOtherClass);
-		final ClassTreeNode parentClassLoader = root.addClassLoader(someClassLoaderParent);
-		parentClassLoader.addPackage("org")
-		                 .addPackage("test")
-		                 .addClass(new LoadedClass("org.test.Test", someClassLoaderParent));
-		final LoadedClass testClass = new LoadedClass("test.ing.stuff.TestClass", someClassLoader);
-		parentClassLoader.addClassLoader(someClassLoader)
-		                 .addPackage("test")
-		                 .addPackage("ing")
-		                 .addPackage("stuff")
-		                 .addClass(testClass);
-		return root.toTreeItem();
 	}
 
 }

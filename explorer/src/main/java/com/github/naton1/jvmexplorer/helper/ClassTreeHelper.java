@@ -31,14 +31,6 @@ public class ClassTreeHelper {
 		return classTreeRoot;
 	}
 
-	public ClassTreeNode buildClassTree(List<LoadedClass> loadedClasses) {
-		final ClassTreeNode classTreeRoot = ClassTreeNode.root();
-		for (LoadedClass loadedClass : loadedClasses) {
-			addClass(loadedClass, classTreeRoot);
-		}
-		return classTreeRoot;
-	}
-
 	private ClassTreeNode addClassLoader(LoadedClass loadedClass, ClassTreeNode treeRoot) {
 		ClassTreeNode classLoaderTree = treeRoot;
 		final List<ClassLoaderDescriptor> classLoaders = Stream.iterate(loadedClass.getClassLoaderDescriptor(),
@@ -64,6 +56,14 @@ public class ClassTreeHelper {
 		classTree.addClass(loadedClass);
 	}
 
+	public ClassTreeNode buildClassTree(List<LoadedClass> loadedClasses) {
+		final ClassTreeNode classTreeRoot = ClassTreeNode.root();
+		for (LoadedClass loadedClass : loadedClasses) {
+			addClass(loadedClass, classTreeRoot);
+		}
+		return classTreeRoot;
+	}
+
 	public List<LoadedClass> getLoadedClassScope(FilterableTreeItem<ClassTreeNode> classesTreeRoot,
 	                                             TreeItem<ClassTreeNode> classLoaderNode) {
 		if (classLoaderNode == null) {
@@ -75,6 +75,11 @@ public class ClassTreeHelper {
 		return getNodeClassLoaderTreeItemStream(classLoaderNode).map(this::getClassesLoadedIn)
 		                                                        .flatMap(List::stream)
 		                                                        .collect(Collectors.toList());
+	}
+
+	public Stream<TreeItem<ClassTreeNode>> getNodeClassLoaderTreeItemStream(TreeItem<ClassTreeNode> treeItem) {
+		return Stream.iterate(treeItem, o -> o != null && o.getValue() != null, TreeItem::getParent)
+		             .filter(p -> p.getValue().getType() == ClassTreeNode.Type.CLASSLOADER);
 	}
 
 	private List<LoadedClass> getClassesLoadedIn(TreeItem<ClassTreeNode> classLoaderNode) {
@@ -124,13 +129,9 @@ public class ClassTreeHelper {
 		                      .collect(Collectors.toList());
 	}
 
-	public Stream<TreeItem<ClassTreeNode>> getNodeClassLoaderTreeItemStream(TreeItem<ClassTreeNode> treeItem) {
-		return Stream.iterate(treeItem, o -> o != null && o.getValue() != null, TreeItem::getParent)
-		             .filter(p -> p.getValue().getType() == ClassTreeNode.Type.CLASSLOADER);
-	}
-
-	public TreeItem<ClassTreeNode> getNodeClassLoaderTreeItem(TreeItem<ClassTreeNode> treeItem) {
-		return getNodeClassLoaderTreeItemStream(treeItem).findFirst().orElse(null);
+	public ClassLoaderDescriptor getNodeClassLoader(TreeItem<ClassTreeNode> treeItem) {
+		final ClassTreeNode classTreeNode = getNodeClassLoaderNode(treeItem);
+		return classTreeNode != null ? classTreeNode.getClassLoaderDescriptor() : null;
 	}
 
 	public ClassTreeNode getNodeClassLoaderNode(TreeItem<ClassTreeNode> treeItem) {
@@ -138,9 +139,8 @@ public class ClassTreeHelper {
 		return classTreeNode != null ? classTreeNode.getValue() : null;
 	}
 
-	public ClassLoaderDescriptor getNodeClassLoader(TreeItem<ClassTreeNode> treeItem) {
-		final ClassTreeNode classTreeNode = getNodeClassLoaderNode(treeItem);
-		return classTreeNode != null ? classTreeNode.getClassLoaderDescriptor() : null;
+	public TreeItem<ClassTreeNode> getNodeClassLoaderTreeItem(TreeItem<ClassTreeNode> treeItem) {
+		return getNodeClassLoaderTreeItemStream(treeItem).findFirst().orElse(null);
 	}
 
 }

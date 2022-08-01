@@ -25,6 +25,18 @@ public class FileHelper {
 		return fileChooser.showOpenDialog(owner);
 	}
 
+	// Integration tests can't handle the file chooser. This allows testing stuff that requires file selection.
+	private File getTestFile(Window owner) {
+		if (owner == null) {
+			return null;
+		}
+		final Object filePath = owner.getProperties().get(TEST_FILE_PATH);
+		if (filePath != null) {
+			return new File(filePath.toString());
+		}
+		return null;
+	}
+
 	public File saveJar(Window owner, String title, String initialFileName) {
 		final File testFile = getTestFile(owner);
 		if (testFile != null) {
@@ -62,18 +74,6 @@ public class FileHelper {
 			fileChooser.setInitialFileName(initialFileName);
 		}
 		return fileChooser.showSaveDialog(owner);
-	}
-
-	// Integration tests can't handle the file chooser. This allows testing stuff that requires file selection.
-	private File getTestFile(Window owner) {
-		if (owner == null) {
-			return null;
-		}
-		final Object filePath = owner.getProperties().get(TEST_FILE_PATH);
-		if (filePath != null) {
-			return new File(filePath.toString());
-		}
-		return null;
 	}
 
 }

@@ -35,10 +35,13 @@ public class Compiler {
 			final List<InputJavaFileObject> files = new ArrayList<>();
 			files.add(new InputJavaFileObject(className, classContent));
 
-			final List<String> compilerOptions = List.of("-source", Integer.toString(targetVersion),
-			                                             "-target", Integer.toString(targetVersion));
+			final List<String> compilerOptions = List.of("-source",
+			                                             Integer.toString(targetVersion),
+			                                             "-target",
+			                                             Integer.toString(targetVersion));
 
-			final Callable<Boolean> compileTask = compiler.getTask(out, providedJvmFileManager,
+			final Callable<Boolean> compileTask = compiler.getTask(out,
+			                                                       providedJvmFileManager,
 			                                                       diagnostics,
 			                                                       compilerOptions,
 			                                                       null,

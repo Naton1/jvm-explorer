@@ -95,8 +95,7 @@ class ClientServerCommunicationTest {
 		       .thenReturn(new Class[] { Integer.class, int.class, String.class,
 		                                 ClientServerCommunicationTest.class });
 
-		Mockito.when(instrumentation.isModifiableClass(ArgumentMatchers.any()))
-				.thenReturn(true);
+		Mockito.when(instrumentation.isModifiableClass(ArgumentMatchers.any())).thenReturn(true);
 
 		final AtomicInteger loaded = new AtomicInteger();
 		final List<LoadedClass> loadedClasses = clientHandler.getLoadedClasses(RUNNING_JVM, loaded::set);
