@@ -7,18 +7,16 @@
 <?import javafx.scene.control.TreeTableView?>
 <?import javafx.scene.layout.VBox?>
 <?import org.fxmisc.richtext.CodeArea?>
-<TitledPane xmlns:fx="http://javafx.com/fxml/1" fx:id="loadedClassTitlePane" collapsible="false"
-            maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="&lt;Class Name&gt;"
-            xmlns="http://javafx.com/javafx/11.0.1"
-            fx:controller="com.github.naton1.jvmexplorer.fx.openclass.CurrentClassController">
+
+<TitledPane fx:id="loadedClassTitlePane" collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="&lt;Class Name&gt;" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.naton1.jvmexplorer.fx.openclass.CurrentClassController">
     <content>
         <TabPane fx:id="currentClassTabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
             <tabs>
-                <Tab text="Class File">
+                <Tab fx:id="classFileTab" text="Class File">
                     <content>
                         <VBox prefHeight="200.0" prefWidth="100.0">
                             <children>
-                                <CodeArea fx:id="classFile" VBox.vgrow="ALWAYS"/>
+                                <CodeArea fx:id="classFile" VBox.vgrow="ALWAYS" />
                             </children>
                         </VBox>
                     </content>
@@ -27,7 +25,7 @@
                     <content>
                         <VBox prefHeight="200.0" prefWidth="100.0">
                             <children>
-                                <CodeArea fx:id="bytecode" VBox.vgrow="ALWAYS"/>
+                                <CodeArea fx:id="bytecode" VBox.vgrow="ALWAYS" />
                             </children>
                         </VBox>
                     </content>
@@ -36,13 +34,12 @@
                     <content>
                         <VBox prefHeight="200.0" prefWidth="100.0">
                             <children>
-                                <TreeTableView fx:id="classFields" prefHeight="200.0" prefWidth="200.0"
-                                               VBox.vgrow="ALWAYS">
+                                <TreeTableView fx:id="classFields" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                     <columns>
-                                        <TreeTableColumn fx:id="modifiersColumn" prefWidth="75.0" text="Modifiers"/>
-                                        <TreeTableColumn fx:id="typeColumn" prefWidth="75.0" text="Type"/>
-                                        <TreeTableColumn fx:id="nameColumn" prefWidth="75.0" text="Name"/>
-                                        <TreeTableColumn fx:id="valueColumn" prefWidth="75.0" text="Value"/>
+                                        <TreeTableColumn fx:id="modifiersColumn" prefWidth="75.0" text="Modifiers" />
+                                        <TreeTableColumn fx:id="typeColumn" prefWidth="75.0" text="Type" />
+                                        <TreeTableColumn fx:id="nameColumn" prefWidth="75.0" text="Name" />
+                                        <TreeTableColumn fx:id="valueColumn" prefWidth="75.0" text="Value" />
                                     </columns>
                                 </TreeTableView>
                             </children>

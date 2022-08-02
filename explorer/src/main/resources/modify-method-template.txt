@@ -1,0 +1,9 @@
+public class <class-name> {
+
+    // Note: The method body below will be compiled and then injected into the specified method.
+
+    <method-desc> {
+        <code>
+    }
+
+}

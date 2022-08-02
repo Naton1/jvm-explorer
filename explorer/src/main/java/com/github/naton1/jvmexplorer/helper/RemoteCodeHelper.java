@@ -6,13 +6,9 @@ import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Dialog;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.stage.Modality;
 import javafx.stage.Window;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,8 +38,6 @@ public class RemoteCodeHelper {
 			                                        packageName,
 			                                        classpath);
 			dialog.getDialogPane().setContent(root);
-			dialog.getDialogPane().getButtonTypes().setAll();
-			dialog.getDialogPane().getStyleClass().add("custom-dialog-pane");
 			final String title = Stream.of("Remote Code Executor", classLoaderDescriptor, packageName)
 			                           .filter(Objects::nonNull)
 			                           .map(Object::toString)
@@ -52,18 +46,8 @@ public class RemoteCodeHelper {
 			                           .collect(Collectors.joining(" - "));
 			dialog.setTitle(title);
 			dialog.initOwner(owner);
-			dialog.initModality(Modality.NONE);
 			dialog.setResizable(true);
-			final Window dialogWindow = dialog.getDialogPane().getScene().getWindow();
-			final ChangeListener<RunningJvm> changeListener = (obs, old, newv) -> dialogWindow.hide();
-			dialog.setOnHidden(e -> currentJvm.removeListener(changeListener));
-			currentJvm.addListener(changeListener);
-			dialogWindow.setOnCloseRequest(e -> dialog.hide());
-			dialog.getDialogPane().addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-				if (e.getCode() == KeyCode.ESCAPE) {
-					dialogWindow.hide();
-				}
-			});
+			DialogHelper.initCustomDialog(dialog, currentJvm);
 			dialog.show();
 		}
 		catch (IOException e) {

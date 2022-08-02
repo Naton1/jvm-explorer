@@ -2,6 +2,8 @@ package com.github.naton1.jvmexplorer;
 
 import com.esotericsoftware.kryonet.Connection;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
+import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
+import com.github.naton1.jvmexplorer.fx.classes.FilterableTreeItem;
 import com.github.naton1.jvmexplorer.fx.classes.LoadedClassesController;
 import com.github.naton1.jvmexplorer.fx.jvms.RunningJvmsController;
 import com.github.naton1.jvmexplorer.fx.openclass.CurrentClassController;
@@ -11,6 +13,7 @@ import com.github.naton1.jvmexplorer.net.JvmExplorerServer;
 import com.github.naton1.jvmexplorer.net.OpenPortProvider;
 import com.github.naton1.jvmexplorer.net.ServerLauncher;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
+import com.github.naton1.jvmexplorer.protocol.helper.VerboseScheduledExecutorService;
 import com.github.naton1.jvmexplorer.settings.JvmExplorerSettings;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -26,7 +29,9 @@ import java.util.concurrent.ScheduledExecutorService;
 @Slf4j
 public class JvmExplorerController {
 
-	private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(8);
+	private final ScheduledExecutorService executorService =
+			new VerboseScheduledExecutorService(Executors.newScheduledThreadPool(
+			8));
 	@FXML
 	private RunningJvmsController runningJvmsController;
 	@FXML
@@ -80,14 +85,22 @@ public class JvmExplorerController {
 				JvmExplorerSettings.load(JvmExplorerSettings.DEFAULT_SETTINGS_FILE);
 		final int serverPort = server.getPort();
 
+		final FilterableTreeItem<ClassTreeNode> classesTreeRoot = new FilterableTreeItem<>();
+
 		this.runningJvmsController.initialize(stage, executorService);
 		this.loadedClassesController.initialize(stage,
 		                                        executorService,
 		                                        clientHandler,
 		                                        currentJvm,
 		                                        serverPort,
-		                                        jvmExplorerSettings);
-		this.currentClassController.initialize(stage, executorService, clientHandler, currentJvm, currentClass);
+		                                        jvmExplorerSettings,
+		                                        classesTreeRoot);
+		this.currentClassController.initialize(stage,
+		                                       executorService,
+		                                       clientHandler,
+		                                       currentJvm,
+		                                       currentClass,
+		                                       classesTreeRoot);
 	}
 
 	private void onConnect(RunningJvm jvm, Connection connection) {

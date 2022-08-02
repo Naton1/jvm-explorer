@@ -6,8 +6,9 @@ import com.github.naton1.jvmexplorer.bytecode.compile.CompileResult;
 import com.github.naton1.jvmexplorer.bytecode.compile.Compiler;
 import com.github.naton1.jvmexplorer.bytecode.compile.JavacBytecodeProvider;
 import com.github.naton1.jvmexplorer.bytecode.compile.RemoteJavacBytecodeProvider;
+import com.github.naton1.jvmexplorer.helper.AcceleratorHelper;
 import com.github.naton1.jvmexplorer.helper.CodeAreaHelper;
-import com.github.naton1.jvmexplorer.helper.RemoteCodeTemplateHelper;
+import com.github.naton1.jvmexplorer.helper.CodeTemplateHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassLoaderDescriptor;
 import com.github.naton1.jvmexplorer.protocol.ExecutionResult;
@@ -20,7 +21,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
 
@@ -32,7 +32,7 @@ public class RemoteCodeExecutorController {
 
 	private static final String CLASS_NAME = "RemoteTask";
 
-	private final RemoteCodeTemplateHelper remoteCodeTemplateHelper = new RemoteCodeTemplateHelper();
+	private final CodeTemplateHelper codeTemplateHelper = new CodeTemplateHelper();
 
 	@FXML
 	private CodeArea code;
@@ -63,8 +63,7 @@ public class RemoteCodeExecutorController {
 
 		final CodeAreaHelper codeAreaHelper = new CodeAreaHelper(executorService);
 
-		final String codeTemplate = remoteCodeTemplateHelper.load(packageName, CLASS_NAME)
-		                                                    .strip(); // remove initial lines for package
+		final String codeTemplate = codeTemplateHelper.loadRemoteCallable(packageName, CLASS_NAME);
 		codeAreaHelper.initializeJavaEditor(code);
 		code.replaceText(codeTemplate);
 		codeAreaHelper.triggerHighlightUpdate(code);
@@ -81,11 +80,7 @@ public class RemoteCodeExecutorController {
 		final KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.R, KeyCodeCombination.CONTROL_DOWN);
 		run.setAccelerator(shortcut);
 
-		code.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (shortcut.match(e)) {
-				run.fire();
-			}
-		});
+		AcceleratorHelper.process(code, shortcut, run);
 
 		contextMenu.getItems().add(run);
 
@@ -124,17 +119,7 @@ public class RemoteCodeExecutorController {
 
 	private int getJavaVersion() {
 		try {
-			String version = runningJvm.getSystemProperties().getProperty("java.version");
-			if (version.startsWith("1.")) {
-				version = version.substring(2, 3);
-			}
-			else {
-				final int dot = version.indexOf(".");
-				if (dot != -1) {
-					version = version.substring(0, dot);
-				}
-			}
-			return Integer.parseInt(version);
+			return runningJvm.getJavaVersion();
 		}
 		catch (AgentException e) {
 			log.warn("Failed to get java version for remote code execution", e);

@@ -1,6 +1,6 @@
 package com.github.naton1.jvmexplorer.bytecode.compile;
 
-import com.github.naton1.jvmexplorer.helper.RemoteCodeTemplateHelper;
+import com.github.naton1.jvmexplorer.helper.CodeTemplateHelper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,11 +45,11 @@ class CompilerTest {
 
 	@Test
 	void testTemplateClass() {
-		final RemoteCodeTemplateHelper remoteCodeTemplateHelper = new RemoteCodeTemplateHelper();
+		final CodeTemplateHelper codeTemplateHelper = new CodeTemplateHelper();
 
 		final Compiler compiler = new Compiler();
 
-		final String classContent = remoteCodeTemplateHelper.load("test", "Test");
+		final String classContent = codeTemplateHelper.loadRemoteCallable("test", "Test");
 		final CompileResult compileResult = compiler.compile(Runtime.version().feature(),
 		                                                     "Test",
 		                                                     classContent,
@@ -61,11 +61,11 @@ class CompilerTest {
 
 	@Test
 	void testTemplateClassNoPackage() {
-		final RemoteCodeTemplateHelper remoteCodeTemplateHelper = new RemoteCodeTemplateHelper();
+		final CodeTemplateHelper codeTemplateHelper = new CodeTemplateHelper();
 
 		final Compiler compiler = new Compiler();
 
-		final String classContent = remoteCodeTemplateHelper.load(null, "Test");
+		final String classContent = codeTemplateHelper.loadRemoteCallable(null, "Test");
 		final CompileResult compileResult = compiler.compile(Runtime.version().feature(),
 		                                                     "Test",
 		                                                     classContent,

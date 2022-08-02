@@ -2,6 +2,7 @@ package com.github.naton1.jvmexplorer.agent;
 
 import com.esotericsoftware.minlog.Log;
 import com.github.naton1.jvmexplorer.protocol.AgentConfiguration;
+import com.github.naton1.jvmexplorer.protocol.helper.VerboseScheduledExecutorService;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;

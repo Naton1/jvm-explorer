@@ -51,7 +51,6 @@ public class LoadedClassesController {
 
 	private final ClassTreeHelper classTreeHelper = new ClassTreeHelper();
 	private final AgentPreparer agentPreparer = new AgentPreparer();
-	private final FilterableTreeItem<ClassTreeNode> classesTreeRoot = new FilterableTreeItem<>();
 	private final SimpleIntegerProperty loadedClassProgressCount = new SimpleIntegerProperty(CLASSES_NOT_LOADING);
 	private final SimpleObjectProperty<ClassContent> currentClass = new SimpleObjectProperty<>();
 	private final FilterHelper filterHelper = new FilterHelper();
@@ -66,12 +65,12 @@ public class LoadedClassesController {
 	@FXML
 	private TitledPane classesTitlePane;
 
+	private FilterableTreeItem<ClassTreeNode> classesTreeRoot;
 	private ScheduledExecutorService executorService;
 	private ClientHandler clientHandler;
 	private ExportHelper exportHelper;
 	private AlertHelper alertHelper;
 	private ObjectProperty<RunningJvm> currentJvm;
-	private BooleanBinding jvmLoaded;
 	private int serverPort;
 	private JvmExplorerSettings settings;
 
@@ -80,13 +79,14 @@ public class LoadedClassesController {
 	}
 
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
-	                       ObjectProperty<RunningJvm> currentJvm, int serverPort, JvmExplorerSettings settings) {
+	                       ObjectProperty<RunningJvm> currentJvm, int serverPort, JvmExplorerSettings settings,
+	                       FilterableTreeItem<ClassTreeNode> classesTreeRoot) {
+		this.classesTreeRoot = classesTreeRoot;
 		this.executorService = executorService;
 		this.clientHandler = clientHandler;
 		this.exportHelper = new ExportHelper(clientHandler);
 		this.alertHelper = new AlertHelper(stage);
 		this.currentJvm = currentJvm;
-		this.jvmLoaded = currentJvm.isNotNull().and(loadedClassProgressCount.isEqualTo(CLASSES_NOT_LOADING));
 		this.serverPort = serverPort;
 		this.settings = settings;
 		initialize();

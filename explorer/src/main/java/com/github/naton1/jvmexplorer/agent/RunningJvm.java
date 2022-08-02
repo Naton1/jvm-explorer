@@ -33,6 +33,26 @@ public class RunningJvm {
 		}
 	}
 
+	public int getJavaVersion() throws AgentException {
+		try {
+			String version = getSystemProperties().getProperty("java.version");
+			if (version.startsWith("1.")) {
+				version = version.substring(2, 3);
+			}
+			else {
+				final int dot = version.indexOf(".");
+				if (dot != -1) {
+					version = version.substring(0, dot);
+				}
+			}
+			return Integer.parseInt(version);
+		}
+		catch (AgentException e) {
+			log.warn("Failed to get java version for remote code execution", e);
+			throw e;
+		}
+	}
+
 	public void loadAgent(String agentPath, String agentArgs) throws AgentException {
 		try {
 			log.debug("Attempting to load agent {} with args {} into {}", agentPath, agentArgs, this);

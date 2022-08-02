@@ -1,5 +1,6 @@
 package com.github.naton1.jvmexplorer.fx.openclass;
 
+import com.github.naton1.jvmexplorer.agent.AgentException;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.bytecode.Assembler;
 import com.github.naton1.jvmexplorer.bytecode.AssemblyException;
@@ -7,8 +8,18 @@ import com.github.naton1.jvmexplorer.bytecode.BytecodeTextifier;
 import com.github.naton1.jvmexplorer.bytecode.OpenJdkJasmAssembler;
 import com.github.naton1.jvmexplorer.bytecode.OpenJdkJasmDisassembler;
 import com.github.naton1.jvmexplorer.bytecode.QuiltflowerDecompiler;
+import com.github.naton1.jvmexplorer.bytecode.compile.CompileResult;
+import com.github.naton1.jvmexplorer.bytecode.compile.Compiler;
+import com.github.naton1.jvmexplorer.bytecode.compile.JavacBytecodeProvider;
+import com.github.naton1.jvmexplorer.bytecode.compile.RemoteJavacBytecodeProvider;
+import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
+import com.github.naton1.jvmexplorer.fx.classes.FilterableTreeItem;
+import com.github.naton1.jvmexplorer.fx.method.ModifyMethodController;
+import com.github.naton1.jvmexplorer.helper.AcceleratorHelper;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
+import com.github.naton1.jvmexplorer.helper.ClassTreeHelper;
 import com.github.naton1.jvmexplorer.helper.CodeAreaHelper;
+import com.github.naton1.jvmexplorer.helper.DialogHelper;
 import com.github.naton1.jvmexplorer.helper.EditorHelper;
 import com.github.naton1.jvmexplorer.helper.FieldTreeHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
@@ -29,7 +40,11 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
@@ -39,11 +54,11 @@ import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
 
+import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
@@ -61,11 +76,13 @@ public class CurrentClassController {
 
 	private final EditorHelper editorHelper = new EditorHelper();
 	private final FieldTreeHelper fieldTreeHelper = new FieldTreeHelper();
+	private final ClassTreeHelper classTreeHelper = new ClassTreeHelper();
 
 	private final SimpleStringProperty decompiledClass = new SimpleStringProperty();
 	private final SimpleStringProperty disassembledClass = new SimpleStringProperty();
 
 	private final SimpleBooleanProperty allowBytecodeEditing = new SimpleBooleanProperty(false);
+	private final SimpleBooleanProperty allowClassFileEditing = new SimpleBooleanProperty(false);
 
 	@FXML
 	private CodeArea bytecode;
@@ -94,6 +111,9 @@ public class CurrentClassController {
 	@FXML
 	private Tab bytecodeTab;
 
+	@FXML
+	private Tab classFileTab;
+
 	private ObjectProperty<RunningJvm> currentJvm;
 	private ObjectProperty<ClassContent> currentClass;
 
@@ -103,14 +123,18 @@ public class CurrentClassController {
 
 	private CodeAreaHelper codeAreaHelper;
 
+	private FilterableTreeItem<ClassTreeNode> classesTreeRoot;
+
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
-	                       ObjectProperty<RunningJvm> currentJvm, ObjectProperty<ClassContent> currentClass) {
+	                       ObjectProperty<RunningJvm> currentJvm, ObjectProperty<ClassContent> currentClass,
+	                       FilterableTreeItem<ClassTreeNode> classesTreeRoot) {
 		this.executorService = executorService;
 		this.clientHandler = clientHandler;
 		this.currentJvm = currentJvm;
 		this.currentClass = currentClass;
 		this.alertHelper = new AlertHelper(stage);
 		this.codeAreaHelper = new CodeAreaHelper(executorService);
+		this.classesTreeRoot = classesTreeRoot;
 		initialize();
 	}
 
@@ -125,93 +149,199 @@ public class CurrentClassController {
 		setupCodeArea(classFile);
 		setupCodeArea(bytecode);
 
-		classFile.setEditable(false);
-		bytecode.editableProperty().bind(allowBytecodeEditing);
-
 		setupBytecodeEditor();
+		setupJavaEditor();
 	}
 
 	private void setupBytecodeEditor() {
+		setupEditor(bytecode, disassembledClass, allowBytecodeEditing, bytecodeTab, this::onBytecodeSave);
+	}
 
-		final BooleanBinding bytecodeModified = Bindings.createBooleanBinding(() -> {
-			if (!allowBytecodeEditing.get()) {
+	private void onBytecodeSave(RunningJvm runningJvm, LoadedClass loadedClass, String text) {
+		executorService.submit(() -> {
+			final Assembler assembler = new OpenJdkJasmAssembler();
+			try {
+				final byte[] assembledClassFile = assembler.assemble(text);
+				final PatchResult result = clientHandler.replaceClass(runningJvm, loadedClass, assembledClassFile);
+				Platform.runLater(() -> {
+					if (!result.isSuccess()) {
+						alertHelper.showError("Class Patch Failed", result.getMessage());
+						return;
+					}
+					disassembledClass.set(text);
+				});
+			}
+			catch (AssemblyException assemblyException) {
+				Platform.runLater(() -> alertHelper.showError("Assembly Failed",
+				                                              "Failed to assemble class",
+				                                              assemblyException));
+			}
+		});
+	}
+
+	private void setupJavaEditor() {
+		setupEditor(classFile, decompiledClass, allowClassFileEditing, classFileTab, this::onClassFileSave);
+
+		final ContextMenu contextMenu = classFile.getContextMenu();
+		final MenuItem modifyMethod = new MenuItem("Modify Method");
+		modifyMethod.setOnAction(e -> showModifyMethod());
+		contextMenu.getItems().add(modifyMethod);
+	}
+
+	private List<LoadedClass> getClassPath(LoadedClass loadedClass) {
+		final ClassLoaderDescriptor classLoaderDescriptor = loadedClass.getClassLoaderDescriptor();
+		final TreeItem<ClassTreeNode> classLoaderTreeItem;
+		if (classLoaderDescriptor == null) {
+			classLoaderTreeItem = null;
+		}
+		else {
+			classLoaderTreeItem = classesTreeRoot.streamSourceItems()
+			                                     .filter(c -> c.getValue() != null)
+			                                     .filter(c -> c.getValue().getType() == ClassTreeNode.Type.CLASSLOADER)
+			                                     .filter(c -> c.getValue()
+			                                                   .getClassLoaderDescriptor()
+			                                                   .equals(classLoaderDescriptor))
+			                                     .findFirst()
+			                                     .orElse(null);
+		}
+		return classTreeHelper.getLoadedClassScope(classesTreeRoot, classLoaderTreeItem);
+	}
+
+	private void showModifyMethod() {
+		try {
+			final Dialog<ButtonType> dialog = new Dialog<>();
+			final FXMLLoader loader = new FXMLLoader(getClass().getClassLoader()
+			                                                   .getResource("fxml/modify_method.fxml"));
+			final Parent root = loader.load();
+			final ModifyMethodController modifyMethodController = loader.getController();
+			final ClassContent classContent = currentClass.get();
+			if (classContent == null) {
+				return;
+			}
+			final RunningJvm runningJvm = currentJvm.get();
+			if (runningJvm == null) {
+				return;
+			}
+			final LoadedClass loadedClass = classContent.getLoadedClass();
+			final List<LoadedClass> classpath = getClassPath(loadedClass);
+			dialog.getDialogPane().setContent(root);
+			dialog.setTitle("Modify Method");
+			dialog.initOwner(classFile.getScene().getWindow());
+			DialogHelper.initCustomDialog(dialog, currentJvm);
+			modifyMethodController.initialize(executorService,
+			                                  clientHandler,
+			                                  runningJvm,
+			                                  loadedClass,
+			                                  () -> dialog.getDialogPane().getScene().getWindow().hide(),
+			                                  classpath,
+			                                  classContent.getClassContent());
+			dialog.show();
+		}
+		catch (IOException e) {
+			log.warn("Failed to initialize code executor", e);
+		}
+	}
+
+	private void onClassFileSave(RunningJvm runningJvm, LoadedClass loadedClass, String text) {
+		final List<LoadedClass> classpath = getClassPath(loadedClass);
+		executorService.submit(() -> {
+			final Compiler compiler = new Compiler();
+			final int javaVersion = getJavaVersion(runningJvm);
+			final JavacBytecodeProvider javacBytecodeProvider = new RemoteJavacBytecodeProvider(clientHandler,
+			                                                                                    runningJvm,
+			                                                                                    classpath);
+			final CompileResult compileResult = compiler.compile(javaVersion,
+			                                                     loadedClass.getName(),
+			                                                     text,
+			                                                     javacBytecodeProvider);
+			if (compileResult.isSuccess()) {
+				final PatchResult patchResult = clientHandler.replaceClass(runningJvm,
+				                                                           loadedClass,
+				                                                           compileResult.getClassContent());
+				if (patchResult.isSuccess()) {
+					Platform.runLater(() -> {
+						decompiledClass.set(text);
+					});
+				}
+				else {
+					Platform.runLater(() -> alertHelper.showError("Patch Failed", patchResult.getMessage()));
+				}
+			}
+			else {
+				Platform.runLater(() -> alertHelper.showError("Compilation Failed", compileResult.getStdOut()));
+			}
+		});
+	}
+
+	private int getJavaVersion(RunningJvm runningJvm) {
+		try {
+			return runningJvm.getJavaVersion();
+		}
+		catch (AgentException e) {
+			log.warn("Failed to get java version for remote code execution", e);
+			return Runtime.version().feature();
+		}
+	}
+
+	private void setupEditor(CodeArea editor, SimpleStringProperty editorBaseContent,
+	                         SimpleBooleanProperty allowEditing, Tab header, OnSaveHandler onSave) {
+
+		editor.editableProperty().bind(allowEditing);
+
+		final BooleanBinding editorModified = Bindings.createBooleanBinding(() -> {
+			if (!allowEditing.get()) {
 				return false;
 			}
 			if (currentClass.get() == null) {
 				return false;
 			}
-			final String baseDisassembledClass = disassembledClass.get();
-			if (baseDisassembledClass == null) {
+			final String baseContent = editorBaseContent.get();
+			if (baseContent == null) {
 				return false;
 			}
 			// Normalize line endings
-			final List<String> editorText = bytecode.getText().lines().collect(Collectors.toList());
-			final List<String> baseLines = baseDisassembledClass.lines().collect(Collectors.toList());
+			final List<String> editorText = editor.getText().lines().collect(Collectors.toList());
+			final List<String> baseLines = baseContent.lines().collect(Collectors.toList());
 			return !editorText.equals(baseLines);
-		}, bytecode.textProperty(), allowBytecodeEditing, disassembledClass, currentClass);
+		}, editor.textProperty(), allowEditing, editorBaseContent, currentClass);
 
-		bytecodeTab.textProperty()
-		           .bind(Bindings.createStringBinding(() -> "Bytecode" + (bytecodeModified.get() ? "*" : ""),
-		                                              bytecodeModified));
+		final String baseTabTitle = header.getText();
+		header.textProperty()
+		      .bind(Bindings.createStringBinding(() -> baseTabTitle + (editorModified.get() ? "*" : ""),
+		                                         editorModified));
 
 		final ContextMenu contextMenu = new ContextMenu();
 
 		final MenuItem save = new MenuItem("Save Changes");
-		save.disableProperty().bind(bytecodeModified.not());
+		save.disableProperty().bind(editorModified.not());
 
 		save.setOnAction(e -> {
 			final RunningJvm runningJvm = currentJvm.get();
 			if (runningJvm == null) {
 				return;
 			}
-			final String text = bytecode.getText();
 			final ClassContent classContent = currentClass.get();
 			if (classContent == null) {
 				return;
 			}
 			final LoadedClass loadedClass = classContent.getLoadedClass();
-			executorService.submit(() -> {
-				final Assembler assembler = new OpenJdkJasmAssembler();
-				try {
-					final byte[] assembledClassFile = assembler.assemble(text);
-					final PatchResult result = clientHandler.replaceClass(runningJvm, loadedClass, assembledClassFile);
-					Platform.runLater(() -> {
-						if (!result.isSuccess()) {
-							alertHelper.showError("Class Patch Failed", result.getMessage());
-							return;
-						}
-						disassembledClass.set(text);
-					});
-				}
-				catch (AssemblyException assemblyException) {
-					Platform.runLater(() -> alertHelper.showError("Assembly Failed",
-					                                              "Failed to assemble class",
-					                                              assemblyException));
-				}
-			});
+			final String text = editor.getText();
+			onSave.onSave(runningJvm, loadedClass, text);
 		});
 
 		final KeyCodeCombination shortcut = new KeyCodeCombination(KeyCode.S, KeyCodeCombination.CONTROL_DOWN);
 		save.setAccelerator(shortcut);
 
-		// It seems like menu item accelerators don't trigger in the CodeArea. We have to manually wire it together.
-		bytecode.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (save.disableProperty().get()) {
-				return;
-			}
-			if (shortcut.match(e)) {
-				save.fire();
-			}
-		});
+		AcceleratorHelper.process(editor, shortcut, save);
 
 		final MenuItem reset = new MenuItem("Reset Changes");
-		reset.disableProperty().bind(bytecodeModified.not());
+		reset.disableProperty().bind(editorModified.not());
 
-		reset.setOnAction(e -> bytecode.replaceText(disassembledClass.get()));
+		reset.setOnAction(e -> editor.replaceText(editorBaseContent.get()));
 
 		contextMenu.getItems().addAll(save, reset);
 
-		bytecode.setContextMenu(contextMenu);
+		editor.setContextMenu(contextMenu);
 	}
 
 	private void setupTitlePaneText() {
@@ -232,7 +362,10 @@ public class CurrentClassController {
 			classFields.getRoot().getChildren().clear();
 		}
 		else {
-			processBytecode(newv, new QuiltflowerDecompiler(), classFile, decompiledClass::set);
+			processBytecode(newv, new QuiltflowerDecompiler(), classFile, newDecompiledClass -> {
+				allowClassFileEditing.set(!PROCESSOR_FAILED.equals(newDecompiledClass));
+				decompiledClass.set(newDecompiledClass);
+			});
 			processBytecode(newv, new OpenJdkJasmDisassembler(), bytecode, newDisassembledClass -> {
 				allowBytecodeEditing.set(!PROCESSOR_FAILED.equals(newDisassembledClass));
 				disassembledClass.set(newDisassembledClass);
@@ -435,6 +568,10 @@ public class CurrentClassController {
 				treeItem.getChildren().add(new TreeItem<>());
 			}
 		});
+	}
+
+	private interface OnSaveHandler {
+		void onSave(RunningJvm runningJvm, LoadedClass loadedClass, String text);
 	}
 
 }

@@ -1,4 +1,4 @@
-package com.github.naton1.jvmexplorer.agent;
+package com.github.naton1.jvmexplorer.protocol.helper;
 
 import com.esotericsoftware.minlog.Log;
 import lombok.RequiredArgsConstructor;

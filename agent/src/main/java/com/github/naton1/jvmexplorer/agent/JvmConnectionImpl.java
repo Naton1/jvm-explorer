@@ -107,7 +107,8 @@ public class JvmConnectionImpl implements JvmConnection {
 		try {
 			final Class<?> klass = classLoader.loadClass(className);
 			final Callable<Object> callable = (Callable<Object>) klass.getConstructor().newInstance();
-			return ExecutionResult.builder().success(true).message(String.valueOf(callable.call())).build();
+			final Object result = callable.call();
+			return ExecutionResult.builder().success(true).message(String.valueOf(result)).build();
 		}
 		catch (Throwable e) {
 			Log.warn("Failed to execute class", e);

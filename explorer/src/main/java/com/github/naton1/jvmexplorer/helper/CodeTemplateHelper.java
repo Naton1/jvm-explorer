@@ -6,25 +6,31 @@ import java.io.IOException;
 import java.util.Objects;
 
 @Slf4j
-public class RemoteCodeTemplateHelper {
+public class CodeTemplateHelper {
 
-	public String load(String packageName, String className) {
-		final String template = load();
-		final String templateWithPackage = addPackage(template, packageName);
-		final String templateWithClass = addClassName(templateWithPackage, className);
-		return templateWithClass;
+	public String loadModifyMethod(String className, String methodDescription, String code) {
+		final String template = loadTemplate("modify-method-template.txt");
+		return template.replace("<class-name>", className)
+		               .replace("<method-desc>", methodDescription)
+		               .replace("<code>", code)
+		               .strip();
 	}
 
-	private String load() {
+	public String loadRemoteCallable(String packageName, String className) {
+		final String template = loadTemplate("remote-code-template.txt");
+		final String templateWithPackage = addPackage(template, packageName);
+		final String templateWithClass = addClassName(templateWithPackage, className);
+		return templateWithClass.strip();
+	}
+
+	private String loadTemplate(String path) {
 		try {
-			final byte[] templateBytes = Objects.requireNonNull(getClass().getClassLoader()
-			                                                              .getResourceAsStream(
-					                                                              "remote-code-template.txt"))
+			final byte[] templateBytes = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(path))
 			                                    .readAllBytes();
 			return new String(templateBytes);
 		}
 		catch (IOException e) {
-			log.error("Failed to load template resource", e);
+			log.error("Failed to load template resource {}", path, e);
 			throw new IllegalStateException(e);
 		}
 	}
