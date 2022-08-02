@@ -120,6 +120,17 @@ public class VerboseScheduledExecutorService implements ScheduledExecutorService
 				runnable.run();
 			}
 			catch (Throwable throwable) {
+
+				// Bug with either RichTextFX, or ReactFX, not sure. But the async stream used for highlighting
+				// tries to do some stuff off the JavaFX thread
+				final StackTraceElement[] stackTrace = throwable.getStackTrace();
+				if (stackTrace != null && stackTrace.length >= 2 && stackTrace[1].getClassName()
+				                                                                .equals("javafx.concurrent.Task")
+				    && stackTrace[1].getMethodName().equals("addEventHandler")) {
+					// Return, don't print or anything. We (unfortunately) know this happens.
+					return;
+				}
+
 				Log.warn("Exception thrown in executor task", throwable);
 				throw throwable;
 			}

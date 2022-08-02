@@ -8,6 +8,7 @@ import com.github.naton1.jvmexplorer.bytecode.compile.CompileResult;
 import com.github.naton1.jvmexplorer.bytecode.compile.Compiler;
 import com.github.naton1.jvmexplorer.bytecode.compile.JavacBytecodeProvider;
 import com.github.naton1.jvmexplorer.bytecode.compile.RemoteJavacBytecodeProvider;
+import com.github.naton1.jvmexplorer.helper.AcceleratorHelper;
 import com.github.naton1.jvmexplorer.helper.AsmHelper;
 import com.github.naton1.jvmexplorer.helper.CodeAreaHelper;
 import com.github.naton1.jvmexplorer.helper.CodeTemplateHelper;
@@ -19,8 +20,13 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -66,12 +72,18 @@ public class ModifyMethodController {
 	@FXML
 	private ComboBox<MethodDescriptor> method;
 
+	@FXML
+	private Button compileButton;
+
+	@FXML
+	private Button modifyButton;
+
 	private ExecutorService executorService;
 	private ClientHandler clientHandler;
 	private RunningJvm runningJvm;
 	private LoadedClass initialClass;
 	private List<LoadedClass> classpath;
-	private Runnable onClose;
+	private Consumer<Boolean> onClose;
 	private byte[] classFile;
 
 	private ClassNode classNode;
@@ -81,7 +93,8 @@ public class ModifyMethodController {
 	private StringBinding template;
 
 	public void initialize(ExecutorService executorService, ClientHandler clientHandler, RunningJvm runningJvm,
-	                       LoadedClass initialClass, Runnable onClose, List<LoadedClass> classpath, byte[] classFile) {
+	                       LoadedClass initialClass, Consumer<Boolean> onClose, List<LoadedClass> classpath,
+	                       byte[] classFile) {
 		this.executorService = executorService;
 		this.clientHandler = clientHandler;
 		this.runningJvm = runningJvm;
@@ -89,45 +102,7 @@ public class ModifyMethodController {
 		this.initialClass = initialClass;
 		this.onClose = onClose;
 		this.classFile = classFile;
-
-		final CodeAreaHelper codeAreaHelper = new CodeAreaHelper(executorService);
-
-		modifyType.getItems().setAll(ModifyType.values());
-		modifyType.getSelectionModel().selectFirst();
-
-		resetClassNode();
-
-		template = Bindings.createStringBinding(() -> buildBaseCode(method.getValue(), modifyType.getValue()),
-		                                        modifyType.valueProperty(),
-		                                        method.valueProperty());
-
-		final ChangeListener<String> bindingListener = (obs, old, newv) -> {
-			code.replaceText(newv);
-			codeAreaHelper.triggerHighlightUpdate(code);
-		};
-		template.addListener(bindingListener);
-		bindingListener.changed(template, null, template.getValue());
-
-		codeAreaHelper.initializeJavaEditor(code);
-	}
-
-	private void resetClassNode() {
-		// We modify the ClassNode methods in-place after compiling.
-		// Therefore, if there is some failure, we need to reset the class node, so it doesn't stay corrupted.
-		classNode = AsmHelper.parse(classFile);
-		final List<MethodDescriptor> methods = classNode.methods.stream()
-		                                                        .map(MethodDescriptor::new)
-		                                                        .collect(Collectors.toList());
-		final int selectedIndex = method.getSelectionModel().getSelectedIndex();
-		method.getItems().setAll(methods);
-		if (selectedIndex == -1) {
-			// Initial setup
-			method.getSelectionModel().selectFirst();
-		}
-		else {
-			// Select same method as before, after resetting
-			method.getSelectionModel().select(selectedIndex);
-		}
+		setupCodeArea();
 	}
 
 	@FXML
@@ -167,13 +142,82 @@ public class ModifyMethodController {
 				return;
 			}
 			log.debug("Patched class successfully");
-			Platform.runLater(this::onCancel); // close
+			Platform.runLater(() -> onClose.accept(true));
 		});
 	}
 
 	@FXML
 	void onCancel() {
-		onClose.run();
+		onClose.accept(false);
+	}
+
+	private void setupCodeArea() {
+		final CodeAreaHelper codeAreaHelper = new CodeAreaHelper(executorService);
+
+		modifyType.getItems().setAll(ModifyType.values());
+		modifyType.getSelectionModel().selectFirst();
+
+		resetClassNode();
+
+		template = Bindings.createStringBinding(() -> buildBaseCode(method.getValue(), modifyType.getValue()),
+		                                        modifyType.valueProperty(),
+		                                        method.valueProperty());
+
+		final ChangeListener<String> bindingListener = (obs, old, newv) -> {
+			code.replaceText(newv);
+			codeAreaHelper.triggerHighlightUpdate(code);
+		};
+		template.addListener(bindingListener);
+		bindingListener.changed(template, null, template.getValue());
+
+		codeAreaHelper.initializeJavaEditor(code);
+		setupContextMenu();
+	}
+
+	private void setupContextMenu() {
+		final ContextMenu contextMenu = new ContextMenu();
+
+		final MenuItem compile = new MenuItem("Compile Code");
+		compile.setOnAction(e -> compileButton.fire());
+
+		final KeyCodeCombination compileShortcut = new KeyCodeCombination(KeyCode.B, KeyCodeCombination.CONTROL_DOWN);
+		compile.setAccelerator(compileShortcut);
+
+		AcceleratorHelper.process(code, compileShortcut, compile);
+
+		contextMenu.getItems().add(compile);
+
+		final MenuItem modifyCode = new MenuItem("Modify Code");
+		modifyCode.setOnAction(e -> modifyButton.fire());
+
+		final KeyCodeCombination modifyShortcut = new KeyCodeCombination(KeyCode.M, KeyCodeCombination.CONTROL_DOWN);
+		modifyCode.setAccelerator(modifyShortcut);
+
+		AcceleratorHelper.process(code, modifyShortcut, modifyCode);
+
+		contextMenu.getItems().add(modifyCode);
+
+		code.setContextMenu(contextMenu);
+	}
+
+	private void resetClassNode() {
+		// We modify the ClassNode methods in-place after compiling.
+		// Therefore, if there is some failure, we need to reset the class node, so it doesn't stay corrupted.
+		classNode = AsmHelper.parse(classFile);
+		final List<MethodDescriptor> methods = classNode.methods.stream()
+		                                                        .filter(mn -> !Modifier.isAbstract(mn.access))
+		                                                        .map(MethodDescriptor::new)
+		                                                        .collect(Collectors.toList());
+		final int selectedIndex = method.getSelectionModel().getSelectedIndex();
+		method.getItems().setAll(methods);
+		if (selectedIndex == -1) {
+			// Initial setup
+			method.getSelectionModel().selectFirst();
+		}
+		else {
+			// Select same method as before, after resetting
+			method.getSelectionModel().select(selectedIndex);
+		}
 	}
 
 	private void postProcess(CompileResult compileResult, MethodDescriptor selectedMethod,

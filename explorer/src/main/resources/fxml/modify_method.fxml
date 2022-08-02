@@ -45,8 +45,8 @@
         </HBox>
       <ButtonBar prefHeight="40.0" prefWidth="200.0">
         <buttons>
-            <Button mnemonicParsing="false" onAction="#onCompile" text="Compile" />
-          <Button defaultButton="true" mnemonicParsing="false" onAction="#onModify" text="Modify" />
+            <Button fx:id="compileButton" mnemonicParsing="false" onAction="#onCompile" text="Compile" />
+          <Button fx:id="modifyButton" defaultButton="true" mnemonicParsing="false" onAction="#onModify" text="Modify" />
             <Button cancelButton="true" mnemonicParsing="false" onAction="#onCancel" text="Cancel" />
         </buttons>
          <VBox.margin>

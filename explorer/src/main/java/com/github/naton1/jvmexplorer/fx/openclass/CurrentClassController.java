@@ -54,6 +54,7 @@ import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
@@ -157,6 +158,26 @@ public class CurrentClassController {
 		setupEditor(bytecode, disassembledClass, allowBytecodeEditing, bytecodeTab, this::onBytecodeSave);
 	}
 
+	private void refreshClass() {
+		final RunningJvm selectedJvm = currentJvm.get();
+		if (selectedJvm == null) {
+			return;
+		}
+		final ClassContent initialClassContent = currentClass.get();
+		if (initialClassContent == null) {
+			return;
+		}
+		final LoadedClass loadedClass = initialClassContent.getLoadedClass();
+		log.debug("Refreshing class: {}", loadedClass);
+		executorService.submit(() -> {
+			final ClassContent classContent = clientHandler.getClassContent(selectedJvm, loadedClass);
+			log.debug("Refreshed class content for {}", loadedClass);
+			if (classContent != null) {
+				Platform.runLater(() -> currentClass.set(classContent));
+			}
+		});
+	}
+
 	private void onBytecodeSave(RunningJvm runningJvm, LoadedClass loadedClass, String text) {
 		executorService.submit(() -> {
 			final Assembler assembler = new OpenJdkJasmAssembler();
@@ -169,6 +190,7 @@ public class CurrentClassController {
 						return;
 					}
 					disassembledClass.set(text);
+					refreshClass();
 				});
 			}
 			catch (AssemblyException assemblyException) {
@@ -183,8 +205,11 @@ public class CurrentClassController {
 		setupEditor(classFile, decompiledClass, allowClassFileEditing, classFileTab, this::onClassFileSave);
 
 		final ContextMenu contextMenu = classFile.getContextMenu();
+		final KeyCodeCombination accelerator = new KeyCodeCombination(KeyCode.M, KeyCombination.CONTROL_DOWN);
 		final MenuItem modifyMethod = new MenuItem("Modify Method");
+		modifyMethod.setAccelerator(accelerator);
 		modifyMethod.setOnAction(e -> showModifyMethod());
+		AcceleratorHelper.process(classFile, accelerator, modifyMethod);
 		contextMenu.getItems().add(modifyMethod);
 	}
 
@@ -228,11 +253,17 @@ public class CurrentClassController {
 			dialog.setTitle("Modify Method");
 			dialog.initOwner(classFile.getScene().getWindow());
 			DialogHelper.initCustomDialog(dialog, currentJvm);
+			final Consumer<Boolean> closeHandler = success -> {
+				dialog.getDialogPane().getScene().getWindow().hide();
+				if (success) {
+					refreshClass();
+				}
+			};
 			modifyMethodController.initialize(executorService,
 			                                  clientHandler,
 			                                  runningJvm,
 			                                  loadedClass,
-			                                  () -> dialog.getDialogPane().getScene().getWindow().hide(),
+			                                  closeHandler,
 			                                  classpath,
 			                                  classContent.getClassContent());
 			dialog.show();
@@ -261,6 +292,7 @@ public class CurrentClassController {
 				if (patchResult.isSuccess()) {
 					Platform.runLater(() -> {
 						decompiledClass.set(text);
+						refreshClass();
 					});
 				}
 				else {
