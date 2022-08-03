@@ -223,7 +223,7 @@ public class JvmExplorerController {
 		    || jvmExplorerSettings.getFirstDividerPosition().get() >= 1
 		    || jvmExplorerSettings.getFirstDividerPosition().get() > jvmExplorerSettings.getSecondDividerPosition()
 		                                                                                .get()) {
-			jvmExplorerSettings.getFirstDividerPosition().set(0.25);
+			jvmExplorerSettings.getFirstDividerPosition().set(0.24);
 		}
 
 		if (jvmExplorerSettings.getSecondDividerPosition().get() <= 0

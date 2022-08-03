@@ -37,34 +37,35 @@ public class LoadedClass implements Comparable<LoadedClass> {
 		INNER, INTERFACE, ABSTRACT, ENUM, ANNOTATION, EXCEPTION, ABSTRACT_EXCEPTION, ANONYMOUS;
 
 		public static MetaType getFor(final Class<?> c) {
-			if (c.isAnonymousClass()) {
-				return ANONYMOUS;
-			}
-			else if (c.isEnum()) {
-				return ENUM;
-			}
-			else if (c.isInterface()) {
-				return INTERFACE;
-			}
-			else if (c.isAnnotation()) {
-				return ANNOTATION;
-			}
-			else if (Exception.class.isAssignableFrom(c)) {
-				if (Modifier.isAbstract(c.getModifiers())) {
-					return ABSTRACT_EXCEPTION;
-				}
-				return EXCEPTION;
-			}
-			else if (Modifier.isAbstract(c.getModifiers())) {
-				return ABSTRACT;
-			}
 			try {
-				if (c.getEnclosingClass() != null) {
+				if (c.isAnonymousClass()) {
+					return ANONYMOUS;
+				}
+				else if (c.isEnum()) {
+					return ENUM;
+				}
+				else if (c.isInterface()) {
+					return INTERFACE;
+				}
+				else if (c.isAnnotation()) {
+					return ANNOTATION;
+				}
+				else if (Exception.class.isAssignableFrom(c)) {
+					if (Modifier.isAbstract(c.getModifiers())) {
+						return ABSTRACT_EXCEPTION;
+					}
+					return EXCEPTION;
+				}
+				else if (Modifier.isAbstract(c.getModifiers())) {
+					return ABSTRACT;
+				}
+				else if (c.getEnclosingClass() != null) {
 					return INNER;
 				}
 			}
 			catch (Throwable t) {
-				Log.warn("Failed to check if class is enclosing class: " + c, t);
+				// Likely failed to load a dependent class (such as inner class)
+				Log.debug("Failed to get MetaType for " + c + ": " + t.getMessage());
 			}
 			return null;
 		}

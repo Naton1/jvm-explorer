@@ -2,7 +2,8 @@
 
 <?import javafx.scene.control.SplitPane?>
 
-<SplitPane fx:id="splitPane" dividerPositions="0.25, 0.5" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1200.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/11.0.1" fx:controller="com.github.naton1.jvmexplorer.JvmExplorerController">
+<SplitPane fx:id="splitPane" dividerPositions="0.24, 0.5" maxHeight="-Infinity" maxWidth="-Infinity"
+           minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1200.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/11.0.1" fx:controller="com.github.naton1.jvmexplorer.JvmExplorerController">
    <items>
       <fx:include fx:id="runningJvms" SplitPane.resizableWithParent="false" source="running_jvms.fxml" />
       <fx:include fx:id="loadedClasses" SplitPane.resizableWithParent="false" source="loaded_classes.fxml" />
