@@ -1,5 +1,6 @@
 package com.github.naton1.jvmexplorer.protocol;
 
+import com.esotericsoftware.minlog.Log;
 import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -57,12 +58,15 @@ public class LoadedClass implements Comparable<LoadedClass> {
 			else if (Modifier.isAbstract(c.getModifiers())) {
 				return ABSTRACT;
 			}
-			else if (c.getEnclosingClass() != null) {
-				return INNER;
+			try {
+				if (c.getEnclosingClass() != null) {
+					return INNER;
+				}
 			}
-			else {
-				return null;
+			catch (Throwable t) {
+				Log.warn("Failed to check if class is enclosing class: " + c, t);
 			}
+			return null;
 		}
 	}
 
