@@ -25,8 +25,8 @@ public class RemoteJavacBytecodeProvider implements JavacBytecodeProvider {
 		return classpath.stream()
 		                .filter(l -> {
 			                final String classPackageName = ClassNameHelper.getPackageName(l.getName());
-			                if (recurse) {
-				                return classPackageName.startsWith(packageName);
+			                if (recurse && classPackageName.startsWith(packageName + ".")) {
+				                return true;
 			                }
 			                return classPackageName.equals(packageName);
 		                })

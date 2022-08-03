@@ -27,6 +27,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Window;
 import javafx.util.Callback;
@@ -37,7 +38,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -76,8 +79,52 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 			if (item == null) {
 				return null;
 			}
+			if (item.getType() == ClassTreeNode.Type.CLASS) {
+				return new ImageView(getClassImage(item.getLoadedClass()));
+			}
 			return new ImageView(item.getType().getImage());
 		}, treeCell.itemProperty()));
+	}
+
+	private static final Map<LoadedClass.MetaType, Image> CLASS_IMAGES = new ConcurrentHashMap<>();
+
+	private Image getClassImage(LoadedClass loadedClass) {
+		if (loadedClass.getMetaType() == null) {
+			return ClassTreeNode.Type.CLASS.getImage();
+		}
+		return CLASS_IMAGES.computeIfAbsent(loadedClass.getMetaType(), type -> {
+			final String imagePath;
+			switch (type) {
+			case INNER:
+				imagePath = "icons/innerclass.png";
+				break;
+			case INTERFACE:
+				imagePath = "icons/interface.png";
+				break;
+			case ABSTRACT:
+				imagePath = "icons/abstractClass.png";
+				break;
+			case ENUM:
+				imagePath = "icons/enum.png";
+				break;
+			case ANNOTATION:
+				imagePath = "icons/annotationtype.png";
+				break;
+			case EXCEPTION:
+				imagePath = "icons/exceptionClass.png";
+				break;
+			case ABSTRACT_EXCEPTION:
+				imagePath = "icons/abstractException.class";
+				break;
+			case ANONYMOUS:
+				imagePath = "icons/anonymousClass.png";
+				break;
+			default:
+				log.warn("Unknown type: {}", type);
+				return ClassTreeNode.Type.CLASS.getImage();
+			}
+			return new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(imagePath)));
+		});
 	}
 
 	private void setupTextBinding(TreeCell<ClassTreeNode> treeCell) {
@@ -323,7 +370,6 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 		final CheckMenuItem includeClassLoader = new CheckMenuItem("Show Class Loaders");
 		includeClassLoader.setOnAction(e -> {
 			settings.getShowClassLoader().set(includeClassLoader.isSelected());
-			settings.save(JvmExplorerSettings.DEFAULT_SETTINGS_FILE);
 			final RunningJvm runningJvm = currentJvm.get();
 			if (runningJvm == null) {
 				return;

@@ -16,12 +16,12 @@ import com.github.naton1.jvmexplorer.protocol.LoadedClass;
 import com.github.naton1.jvmexplorer.settings.JvmExplorerSettings;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
@@ -32,12 +32,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.UncheckedIOException;
+import java.text.NumberFormat;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 
 @Slf4j
 public class LoadedClassesController {
+
+	private static final NumberFormat numberFormat = NumberFormat.getInstance();
 
 	private static final int CLASSES_NOT_LOADING = -1;
 
@@ -76,6 +79,10 @@ public class LoadedClassesController {
 
 	public ObjectProperty<ClassContent> currentClassProperty() {
 		return currentClass;
+	}
+
+	public Node getRoot() {
+		return classesTitlePane;
 	}
 
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
@@ -227,8 +234,14 @@ public class LoadedClassesController {
 	private String getTitlePaneText() {
 		final long visibleItems = classesTreeRoot.streamVisible().filter(p -> p.getLoadedClass() != null).count();
 		final long sourceItems = classesTreeRoot.streamSource().filter(p -> p.getLoadedClass() != null).count();
-		return "Loaded Classes (" + (visibleItems == sourceItems ? visibleItems : (visibleItems + "/" + sourceItems))
-		       + ")";
+		return "Loaded Classes (" + getLoadedClassDisplay(visibleItems, sourceItems) + ")";
+	}
+
+	private String getLoadedClassDisplay(long visibleItems, long sourceItems) {
+		if (visibleItems == sourceItems) {
+			return numberFormat.format(visibleItems);
+		}
+		return numberFormat.format(visibleItems) + "/" + numberFormat.format(sourceItems);
 	}
 
 	private String getPlaceholderText() {

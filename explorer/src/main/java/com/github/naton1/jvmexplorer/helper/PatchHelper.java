@@ -28,7 +28,7 @@ public class PatchHelper {
 					log.debug("Patching {}", name);
 					final byte[] classContents = jar.getInputStream(classFile).readAllBytes();
 					// Note - we may not always want to pass in the class loader. It could be in a child classloader.
-					final LoadedClass loadedClass = new LoadedClass(name, classLoaderDescriptor);
+					final LoadedClass loadedClass = new LoadedClass(name, classLoaderDescriptor, null);
 					final PatchResult result = clientHandler.replaceClass(runningJvm, loadedClass, classContents);
 					if (!result.isSuccess()) {
 						throw new IllegalStateException(

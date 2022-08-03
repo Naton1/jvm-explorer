@@ -44,6 +44,7 @@ public class Protocol {
 
 		// Setup core classes
 		kryo.register(LoadedClass.class);
+		kryo.register(LoadedClass.MetaType.class);
 		kryo.register(LoadedClass[].class);
 		kryo.register(ClassContent.class);
 		kryo.register(ClassField.class);

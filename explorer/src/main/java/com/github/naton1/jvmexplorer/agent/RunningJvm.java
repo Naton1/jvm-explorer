@@ -36,6 +36,9 @@ public class RunningJvm {
 	public int getJavaVersion() throws AgentException {
 		try {
 			String version = getSystemProperties().getProperty("java.version");
+			if (version == null) {
+				throw new AgentException("Target JVM does not define a java.version property");
+			}
 			if (version.startsWith("1.")) {
 				version = version.substring(2, 3);
 			}

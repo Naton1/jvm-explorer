@@ -15,7 +15,8 @@ public class ClassFieldKey {
 
 	@Override
 	public String toString() {
-		return Modifier.toString(modifiers) + " " + typeName + " " + getSimpleName() + "." + fieldName;
+		return Modifier.toString(modifiers) + " " + typeName.replace("java.lang.", "") + " " + getSimpleName() + "."
+		       + fieldName;
 	}
 
 	public String getSimpleName() {

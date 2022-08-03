@@ -1,6 +1,7 @@
 package com.github.naton1.jvmexplorer.fx.openclass;
 
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
+import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.EditorHelper;
 import com.github.naton1.jvmexplorer.helper.FieldTreeHelper;
@@ -17,16 +18,22 @@ import javafx.beans.property.ObjectProperty;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableRow;
-import javafx.scene.control.TreeTableView;
+import javafx.scene.control.TreeView;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.util.Callback;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.lang.reflect.Modifier;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 @RequiredArgsConstructor
-public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>, TreeTableRow<ClassField>> {
+public class ClassFieldCellFactory implements Callback<TreeView<ClassField>, TreeCell<ClassField>> {
 
 	private final FieldTreeHelper fieldTreeHelper = new FieldTreeHelper();
 
@@ -38,12 +45,12 @@ public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>,
 	private final ObjectProperty<ClassContent> currentClass;
 
 	@Override
-	public TreeTableRow<ClassField> call(TreeTableView<ClassField> param) {
-		final TreeTableRow<ClassField> row = new TreeTableRow<>();
+	public TreeCell<ClassField> call(TreeView<ClassField> param) {
+		final TreeCell<ClassField> cell = new TreeCell<>();
 		final ContextMenu rowContextMenu = new ContextMenu();
 		final MenuItem editRow = new MenuItem("Edit Value");
 		editRow.setOnAction(e -> {
-			final ClassField classField = row.getItem();
+			final ClassField classField = cell.getItem();
 			if (classField == null) {
 				return;
 			}
@@ -58,16 +65,43 @@ public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>,
 				if (selectedJvm == null) {
 					return;
 				}
-				edit(selectedJvm, row.getTreeItem(), result);
+				edit(selectedJvm, cell.getTreeItem(), result);
 			});
 		});
 		rowContextMenu.getItems().add(editRow);
 		// Don't show if the row is empty, or the row is a wrapped object. We can't edit those.
-		row.contextMenuProperty().bind(Bindings.when(Bindings.createBooleanBinding(() -> {
-			final ClassField item = row.getItem();
+		cell.contextMenuProperty().bind(Bindings.when(Bindings.createBooleanBinding(() -> {
+			final ClassField item = cell.getItem();
 			return item != null && !(item.getValue() instanceof WrappedObject);
-		}, row.itemProperty())).then(rowContextMenu).otherwise((ContextMenu) null));
-		return row;
+		}, cell.itemProperty())).then(rowContextMenu).otherwise((ContextMenu) null));
+		setupTextBinding(cell);
+		setupImageBinding(cell);
+		setupTooltipBinding(cell);
+		return cell;
+	}
+
+	private void setupImageBinding(TreeCell<ClassField> treeCell) {
+		treeCell.graphicProperty().bind(Bindings.createObjectBinding(() -> {
+			final ClassField item = treeCell.getItem();
+			if (item == null) {
+				return null;
+			}
+			return new ImageView(getFieldType(item).getImage());
+		}, treeCell.itemProperty()));
+	}
+
+	private void setupTextBinding(TreeCell<ClassField> treeCell) {
+		treeCell.textProperty()
+		        .bind(Bindings.when(treeCell.itemProperty().isNotNull())
+		                      .then(treeCell.itemProperty().asString())
+		                      .otherwise(""));
+	}
+
+	private void setupTooltipBinding(TreeCell<ClassField> treeCell) {
+		final Tooltip tooltip = new Tooltip();
+		tooltip.textProperty().bind(treeCell.itemProperty().asString());
+		treeCell.tooltipProperty()
+		        .bind(Bindings.when(treeCell.itemProperty().isNotNull()).then(tooltip).otherwise((Tooltip) null));
 	}
 
 	private void edit(RunningJvm selectedJvm, TreeItem<ClassField> classField, String newValue) {
@@ -86,6 +120,28 @@ public class ClassFieldRowFactory implements Callback<TreeTableView<ClassField>,
 				Platform.runLater(() -> alertHelper.showError("Operation Failed", "Failed to change field"));
 			}
 		});
+	}
+
+	private FieldType getFieldType(ClassField classField) {
+		if (Modifier.isStatic(classField.getClassFieldKey().getModifiers())) {
+			if (Modifier.isFinal(classField.getClassFieldKey().getModifiers())) {
+				return FieldType.CONSTANT;
+			}
+			return FieldType.STATIC;
+		}
+		else {
+			return FieldType.INSTANCE;
+		}
+	}
+
+	private enum FieldType {
+		STATIC("icons/static.png"), INSTANCE("icons/field.png"), CONSTANT("icons/constant.png");
+		@Getter
+		private final Image image;
+
+		FieldType(String imagePath) {
+			image = new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(imagePath)));
+		}
 	}
 
 }

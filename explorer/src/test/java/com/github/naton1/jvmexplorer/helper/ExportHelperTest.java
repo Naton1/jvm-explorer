@@ -34,10 +34,10 @@ class ExportHelperTest {
 	void testExport() throws IOException {
 		final ExportHelper exportHelper = new ExportHelper(clientHandler);
 		final ClassLoaderDescriptor classLoaderDescriptor = ClassLoaderDescriptor.builder().build();
-		final List<LoadedClass> classesToExport = List.of(new LoadedClass("org.test.MyClass", null),
+		final List<LoadedClass> classesToExport = List.of(new LoadedClass("org.test.MyClass", null, null),
 		                                                  new LoadedClass("org.othertest.SomeClass",
 		                                                                  classLoaderDescriptor),
-		                                                  new LoadedClass("testing.Export", classLoaderDescriptor));
+		                                                  new LoadedClass("testing.Export", classLoaderDescriptor, null));
 
 		final Map<String, byte[]> classData = classesToExport.stream()
 		                                                     .collect(Collectors.toMap(LoadedClass::getName,

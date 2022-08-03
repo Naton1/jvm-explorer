@@ -13,21 +13,16 @@ class SettingsTest {
 	void givenSettingsFile_whenSaveAndLoad_thenSettingsAreEqual() throws IOException {
 		final JvmExplorerSettings jvmExplorerSettings = new JvmExplorerSettings();
 		jvmExplorerSettings.getShowClassLoader().set(true);
+		jvmExplorerSettings.getFirstDividerPosition().set(0.25);
+		jvmExplorerSettings.getSecondDividerPosition().set(0.5);
 
 		final File tempFile = File.createTempFile("test", "test");
 
 		jvmExplorerSettings.save(tempFile);
 		final JvmExplorerSettings loadedSettings = JvmExplorerSettings.load(tempFile);
 
-		Assertions.assertTrue(checkEqual(jvmExplorerSettings, loadedSettings));
+		Assertions.assertTrue(jvmExplorerSettings.propertiesEquals(loadedSettings));
 		tempFile.delete();
-	}
-
-	private boolean checkEqual(JvmExplorerSettings explorerSettings, JvmExplorerSettings actualSettings) {
-		if (explorerSettings.getShowClassLoader().get() != actualSettings.getShowClassLoader().get()) {
-			return false;
-		}
-		return true;
 	}
 
 	@Test
@@ -37,9 +32,43 @@ class SettingsTest {
 		final JvmExplorerSettings loadedSettings = JvmExplorerSettings.load(tempFile);
 
 		Assertions.assertNotNull(loadedSettings);
-		Assertions.assertTrue(checkEqual(new JvmExplorerSettings(), loadedSettings));
+		Assertions.assertTrue(new JvmExplorerSettings().propertiesEquals(loadedSettings));
 
 		tempFile.delete();
+	}
+
+	@Test
+	void givenSettingsFileWithAutoSaving_whenModify_thenSettingsSaved() throws IOException {
+		final File tempFile = File.createTempFile("test", "test");
+		final JvmExplorerSettings jvmExplorerSettings = new JvmExplorerSettings();
+		jvmExplorerSettings.getShowClassLoader().set(true);
+
+		final JvmExplorerSettings loadedSettings = JvmExplorerSettings.load(tempFile);
+		Assertions.assertFalse(jvmExplorerSettings.propertiesEquals(loadedSettings));
+
+		jvmExplorerSettings.configureAutoSaving(tempFile);
+		jvmExplorerSettings.getFirstDividerPosition().set(0.25);
+		jvmExplorerSettings.getSecondDividerPosition().set(0.5);
+		final JvmExplorerSettings updatedSettings = JvmExplorerSettings.load(tempFile);
+
+		Assertions.assertTrue(jvmExplorerSettings.propertiesEquals(updatedSettings));
+		tempFile.delete();
+	}
+
+	@Test
+	void testPropertiesEquals() {
+		final JvmExplorerSettings jvmExplorerSettings = new JvmExplorerSettings();
+		jvmExplorerSettings.getShowClassLoader().set(true);
+
+		final JvmExplorerSettings otherSettings = new JvmExplorerSettings();
+		otherSettings.getShowClassLoader().set(true);
+
+		Assertions.assertTrue(jvmExplorerSettings.propertiesEquals(otherSettings));
+
+		otherSettings.getFirstDividerPosition().set(0.25);
+		otherSettings.getSecondDividerPosition().set(0.5);
+
+		Assertions.assertFalse(jvmExplorerSettings.propertiesEquals(otherSettings));
 	}
 
 }

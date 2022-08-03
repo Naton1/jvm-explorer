@@ -3,8 +3,7 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TitledPane?>
-<?import javafx.scene.control.TreeTableColumn?>
-<?import javafx.scene.control.TreeTableView?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.VBox?>
 <?import org.fxmisc.richtext.CodeArea?>
 
@@ -33,16 +32,9 @@
                 <Tab text="Fields">
                     <content>
                         <VBox prefHeight="200.0" prefWidth="100.0">
-                            <children>
-                                <TreeTableView fx:id="classFields" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-                                    <columns>
-                                        <TreeTableColumn fx:id="modifiersColumn" prefWidth="75.0" text="Modifiers" />
-                                        <TreeTableColumn fx:id="typeColumn" prefWidth="75.0" text="Type" />
-                                        <TreeTableColumn fx:id="nameColumn" prefWidth="75.0" text="Name" />
-                                        <TreeTableColumn fx:id="valueColumn" prefWidth="75.0" text="Value" />
-                                    </columns>
-                                </TreeTableView>
-                            </children>
+                     <children>
+                        <TreeView fx:id="classFields" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
+                     </children>
                         </VBox>
                     </content>
                 </Tab>

@@ -126,7 +126,9 @@ public class JvmConnectionImpl implements JvmConnection {
 			final String className = c.getName();
 			final ClassLoaderDescriptor classLoaderDescriptor =
 					c.getClassLoader() != null ? classLoaderStore.store(c.getClassLoader()) : null;
-			final LoadedClass loadedClass = new LoadedClass(className, classLoaderDescriptor);
+			final LoadedClass loadedClass = new LoadedClass(className,
+			                                                classLoaderDescriptor,
+			                                                LoadedClass.MetaType.getFor(c));
 			classes.add(loadedClass);
 		}
 		final int packetSize = 100;

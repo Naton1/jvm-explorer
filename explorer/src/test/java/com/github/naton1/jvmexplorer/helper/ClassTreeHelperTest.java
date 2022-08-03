@@ -27,9 +27,9 @@ class ClassTreeHelperTest {
 		                                                                         .simpleClassName("ClassLoader")
 		                                                                         .parent(parentClassLoaderDescriptor)
 		                                                                         .build();
-		final LoadedClass loadedClass = new LoadedClass("test.TestClass", classLoaderDescriptor);
-		final LoadedClass otherClass = new LoadedClass("test.something.OtherClass", classLoaderDescriptor);
-		final LoadedClass rootClass = new LoadedClass("test.Root", parentClassLoaderDescriptor);
+		final LoadedClass loadedClass = new LoadedClass("test.TestClass", classLoaderDescriptor, null);
+		final LoadedClass otherClass = new LoadedClass("test.something.OtherClass", classLoaderDescriptor, null);
+		final LoadedClass rootClass = new LoadedClass("test.Root", parentClassLoaderDescriptor, null);
 
 		final ClassTreeNode expectedRoot = ClassTreeNode.root();
 		final ClassTreeNode expectedParentClassLoader = expectedRoot.addClassLoader(parentClassLoaderDescriptor);
@@ -61,9 +61,9 @@ class ClassTreeHelperTest {
 		                                                                         .simpleClassName("ClassLoader")
 		                                                                         .parent(parentClassLoaderDescriptor)
 		                                                                         .build();
-		final LoadedClass loadedClass = new LoadedClass("test.TestClass", classLoaderDescriptor);
-		final LoadedClass otherClass = new LoadedClass("test.something.OtherClass", classLoaderDescriptor);
-		final LoadedClass rootClass = new LoadedClass("test.Root", parentClassLoaderDescriptor);
+		final LoadedClass loadedClass = new LoadedClass("test.TestClass", classLoaderDescriptor, null);
+		final LoadedClass otherClass = new LoadedClass("test.something.OtherClass", classLoaderDescriptor, null);
+		final LoadedClass rootClass = new LoadedClass("test.Root", parentClassLoaderDescriptor, null);
 
 		final ClassTreeNode expectedRoot = ClassTreeNode.root();
 		final ClassTreeNode expectedTestPackage = expectedRoot.addPackage("test");
@@ -138,13 +138,13 @@ class ClassTreeHelperTest {
 		                                                                        .simpleClassName(
 																						"SomeOtherClassLoader")
 		                                                                        .build();
-		final LoadedClass someOtherClass = new LoadedClass("org.test.OtherTestClass", someOtherClassLoader);
+		final LoadedClass someOtherClass = new LoadedClass("org.test.OtherTestClass", someOtherClassLoader, null);
 		root.addClassLoader(someOtherClassLoader).addPackage("org").addPackage("test").addClass(someOtherClass);
 		final ClassTreeNode parentClassLoader = root.addClassLoader(someClassLoaderParent);
 		parentClassLoader.addPackage("org")
 		                 .addPackage("test")
-		                 .addClass(new LoadedClass("org.test.Test", someClassLoaderParent));
-		final LoadedClass testClass = new LoadedClass("test.ing.stuff.TestClass", someClassLoader);
+		                 .addClass(new LoadedClass("org.test.Test", someClassLoaderParent, null));
+		final LoadedClass testClass = new LoadedClass("test.ing.stuff.TestClass", someClassLoader, null);
 		parentClassLoader.addClassLoader(someClassLoader)
 		                 .addPackage("test")
 		                 .addPackage("ing")

@@ -115,8 +115,11 @@ public class ModifyMethodController {
 		final MethodDescriptor selectedMethod = method.getValue();
 		final ModifyType selectedModifyType = modifyType.getValue();
 		onCompile(compileResult -> {
+			final byte[] finishedClass;
 			try {
 				postProcess(compileResult, selectedMethod, selectedModifyType);
+				// We can use the stack frames from the valid bytecode we already have
+				finishedClass = AsmHelper.parse(ClassWriter.COMPUTE_MAXS, classNode);
 			}
 			catch (Exception e) {
 				log.warn("Failed to post-process method", e);
@@ -126,9 +129,6 @@ public class ModifyMethodController {
 				});
 				return;
 			}
-
-			// We can use the stack frames from the valid bytecode we already have
-			final byte[] finishedClass = AsmHelper.parse(ClassWriter.COMPUTE_MAXS, classNode);
 
 			final PatchResult patchResult = clientHandler.replaceClass(runningJvm, initialClass, finishedClass);
 			if (!patchResult.isSuccess()) {
@@ -241,6 +241,10 @@ public class ModifyMethodController {
 			methodToModify.instructions.insert(new LabelNode(after));
 			methodToModify.instructions.insert(frame);
 			methodToModify.instructions.insert(updatedMethod.instructions);
+			if (classNode.version < Opcodes.V1_6) {
+				// F_SAME requires >= V1_6
+				classNode.version = Opcodes.V1_6;
+			}
 			// new instructions -> label -> new frame -> old instructions
 			break;
 		case REPLACE:
@@ -275,6 +279,10 @@ public class ModifyMethodController {
 	}
 
 	private String buildBaseCode(MethodDescriptor methodDesc, ModifyType modifyType) {
+		if (methodDesc == null) {
+			// If all methods are abstract (interface), we may not be able to modify anything
+			return "// No method selected";
+		}
 		final String returnType =
 				modifyType.isExpectsReturnValue() ? Type.getReturnType(methodDesc.getMethodNode().desc).getClassName()
 				                                  : "void";
@@ -284,16 +292,16 @@ public class ModifyMethodController {
 		return codeTemplateHelper.loadModifyMethod(CLASS_NAME, method, code);
 	}
 
-	private void replaceReturn(MethodNode updatedMethod, Label label) {
+	private void replaceReturn(MethodNode methodNodeToUpdate, Label goToLabel) {
 		final List<AbstractInsnNode> returns = new ArrayList<>();
-		for (AbstractInsnNode insn : updatedMethod.instructions) {
+		for (AbstractInsnNode insn : methodNodeToUpdate.instructions) {
 			if (insn.getOpcode() == Opcodes.RETURN) {
 				returns.add(insn);
 			}
 		}
 		returns.forEach(ret -> {
-			final AbstractInsnNode jump = new JumpInsnNode(Opcodes.GOTO, new LabelNode(label));
-			updatedMethod.instructions.set(ret, jump);
+			final AbstractInsnNode jump = new JumpInsnNode(Opcodes.GOTO, new LabelNode(goToLabel));
+			methodNodeToUpdate.instructions.set(ret, jump);
 		});
 	}
 
@@ -353,9 +361,14 @@ public class ModifyMethodController {
 
 		public String buildTemplate(String methodName, String returnType) {
 			final AtomicInteger paramIndex = new AtomicInteger(0);
+			if (!Modifier.isStatic(methodNode.access)) {
+				// 'this' is index 0, so push everything up 1
+				paramIndex.incrementAndGet();
+			}
 			final String arguments = Arrays.stream(Type.getArgumentTypes(methodNode.desc))
 			                               .map(Type::getClassName)
-			                               .map(type -> type + " var" + paramIndex.getAndIncrement())
+			                               .map(type -> type + " var" + paramIndex.get())
+			                               .peek(param -> paramIndex.incrementAndGet())
 			                               .collect(Collectors.joining(", "));
 			final boolean isStatic = Modifier.isStatic(methodNode.access);
 			final String methodPrefix = "public " + (isStatic ? "static " : "");
@@ -367,6 +380,7 @@ public class ModifyMethodController {
 			final String returnType = Type.getReturnType(methodNode.desc).getClassName();
 			return buildTemplate(methodNode.name, returnType);
 		}
+
 	}
 
 }

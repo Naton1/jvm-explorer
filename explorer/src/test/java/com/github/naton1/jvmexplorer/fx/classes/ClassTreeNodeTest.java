@@ -10,8 +10,8 @@ class ClassTreeNodeTest {
 	@Test
 	void testToTreeItem() {
 		final ClassTreeNode root = ClassTreeNode.root();
-		root.addPackage("test").addClass(new LoadedClass("test.Test", null));
-		root.addClass(new LoadedClass("OtherClass", null));
+		root.addPackage("test").addClass(new LoadedClass("test.Test", null, null));
+		root.addClass(new LoadedClass("OtherClass", null, null));
 
 		final FilterableTreeItem<ClassTreeNode> rootTreeItem = root.toTreeItem();
 

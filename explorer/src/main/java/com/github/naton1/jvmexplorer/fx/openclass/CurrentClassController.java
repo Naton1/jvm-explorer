@@ -14,6 +14,7 @@ import com.github.naton1.jvmexplorer.bytecode.compile.JavacBytecodeProvider;
 import com.github.naton1.jvmexplorer.bytecode.compile.RemoteJavacBytecodeProvider;
 import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
 import com.github.naton1.jvmexplorer.fx.classes.FilterableTreeItem;
+import com.github.naton1.jvmexplorer.fx.classes.TreeViewPlaceholderSkin;
 import com.github.naton1.jvmexplorer.fx.method.ModifyMethodController;
 import com.github.naton1.jvmexplorer.helper.AcceleratorHelper;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
@@ -37,10 +38,10 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
@@ -50,8 +51,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTableView;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -60,9 +60,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
 
 import java.io.IOException;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -92,19 +92,7 @@ public class CurrentClassController {
 	private CodeArea classFile;
 
 	@FXML
-	private TreeTableView<ClassField> classFields;
-
-	@FXML
-	private TreeTableColumn<ClassField, String> modifiersColumn;
-
-	@FXML
-	private TreeTableColumn<ClassField, String> typeColumn;
-
-	@FXML
-	private TreeTableColumn<ClassField, String> nameColumn;
-
-	@FXML
-	private TreeTableColumn<ClassField, Object> valueColumn;
+	private TreeView<ClassField> classFields;
 
 	@FXML
 	private TitledPane loadedClassTitlePane;
@@ -125,6 +113,10 @@ public class CurrentClassController {
 	private CodeAreaHelper codeAreaHelper;
 
 	private FilterableTreeItem<ClassTreeNode> classesTreeRoot;
+
+	public Node getRoot() {
+		return loadedClassTitlePane;
+	}
 
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
 	                       ObjectProperty<RunningJvm> currentJvm, ObjectProperty<ClassContent> currentClass,
@@ -173,7 +165,16 @@ public class CurrentClassController {
 			final ClassContent classContent = clientHandler.getClassContent(selectedJvm, loadedClass);
 			log.debug("Refreshed class content for {}", loadedClass);
 			if (classContent != null) {
-				Platform.runLater(() -> currentClass.set(classContent));
+				Platform.runLater(() -> {
+					final ClassContent currentClassContent = currentClass.get();
+					if (currentClassContent == null || !currentClassContent.getLoadedClass().equals(loadedClass)) {
+						log.debug("Current class changed from {} to {}, ignoring replacement",
+						          loadedClass,
+						          classContent);
+						return;
+					}
+					currentClass.set(classContent);
+				});
 			}
 		});
 	}
@@ -387,6 +388,7 @@ public class CurrentClassController {
 	}
 
 	private void onClassChange(ClassContent old, ClassContent newv) {
+		allowClassFileEditing.set(false);
 		allowBytecodeEditing.set(false);
 		if (newv == null) {
 			classFile.clear();
@@ -479,72 +481,23 @@ public class CurrentClassController {
 		final TreeItem<ClassField> classFieldRoot = new TreeItem<>(null);
 		classFields.setShowRoot(false);
 		classFields.setRoot(classFieldRoot);
-		classFields.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
 
-		modifiersColumn.setCellValueFactory(cv -> new SimpleObjectProperty<>(getModifiers(cv)));
-		typeColumn.setCellValueFactory(cv -> new SimpleObjectProperty<>(getType(cv)));
-		nameColumn.setCellValueFactory(cv -> new SimpleObjectProperty<>(getName(cv)));
-		valueColumn.setCellValueFactory(cv -> new SimpleObjectProperty<>(getValue(cv)));
-
-		modifiersColumn.setCellFactory(tv -> new TooltippedTreeTableCell<>());
-		typeColumn.setCellFactory(tv -> new TooltippedTreeTableCell<>());
-		nameColumn.setCellFactory(tv -> new TooltippedTreeTableCell<>());
-		valueColumn.setCellFactory(tv -> new TooltippedTreeTableCell<>());
-
-		classFields.setRowFactory(new ClassFieldRowFactory(editorHelper,
-		                                                   executorService,
-		                                                   clientHandler,
-		                                                   currentJvm,
-		                                                   alertHelper,
-		                                                   currentClass));
+		classFields.setCellFactory(new ClassFieldCellFactory(editorHelper,
+		                                                     executorService,
+		                                                     clientHandler,
+		                                                     currentJvm,
+		                                                     alertHelper,
+		                                                     currentClass));
 
 		final Label classFieldsPlaceholder = new Label();
 		classFieldsPlaceholder.textProperty()
 		                      .bind(Bindings.createStringBinding(() -> currentClass.get() != null
 		                                                               ? "No static fields found" : NO_CLASS_FILE_OPEN,
 		                                                         currentClass));
-		classFields.setPlaceholder(classFieldsPlaceholder);
-	}
 
-	private String getModifiers(TreeTableColumn.CellDataFeatures<ClassField, String> cellDataFeatures) {
-		final TreeItem<ClassField> treeItem = cellDataFeatures.getValue();
-		final ClassField classField = treeItem.getValue();
-		if (classField == null) {
-			return null;
-		}
-		final String modifiers = Modifier.toString(classField.getClassFieldKey().getModifiers());
-		if (modifiers.isEmpty()) {
-			return "<none>";
-		}
-		return modifiers;
-	}
-
-	private String getType(TreeTableColumn.CellDataFeatures<ClassField, String> cellDataFeatures) {
-		final TreeItem<ClassField> treeItem = cellDataFeatures.getValue();
-		final ClassField classField = treeItem.getValue();
-		if (classField == null) {
-			return null;
-		}
-		return classField.getClassFieldKey().getTypeName();
-	}
-
-	private String getName(TreeTableColumn.CellDataFeatures<ClassField, String> cellDataFeatures) {
-		final TreeItem<ClassField> treeItem = cellDataFeatures.getValue();
-		final ClassField classField = treeItem.getValue();
-		if (classField == null) {
-			return null;
-		}
-		final ClassFieldKey classFieldKey = classField.getClassFieldKey();
-		return classFieldKey.getSimpleName() + "." + classFieldKey.getFieldName();
-	}
-
-	private Object getValue(TreeTableColumn.CellDataFeatures<ClassField, Object> cellDataFeatures) {
-		final TreeItem<ClassField> treeItem = cellDataFeatures.getValue();
-		final ClassField classField = treeItem.getValue();
-		if (classField == null) {
-			return null;
-		}
-		return classField.getValue();
+		final TreeViewPlaceholderSkin<ClassField> treeViewPlaceholderSkin = new TreeViewPlaceholderSkin<>(classFields);
+		treeViewPlaceholderSkin.placeholderProperty().setValue(classFieldsPlaceholder);
+		classFields.setSkin(treeViewPlaceholderSkin);
 	}
 
 	// CodeArea must be in a VBox to replace and insert into VirtualizedScrollPane
@@ -564,6 +517,9 @@ public class CurrentClassController {
 
 	private void loadChildren(TreeItem<ClassField> parent, ClassFields classFields) {
 		final List<TreeItem<ClassField>> newTableItems = Arrays.stream(classFields.getFields())
+		                                                       // Remove cycles
+		                                                       .filter(field -> !Objects.equals(parent.getValue(),
+		                                                                                        field))
 		                                                       .map(TreeItem::new)
 		                                                       .peek(this::handleWrappedObject)
 		                                                       .collect(Collectors.toList());

@@ -12,18 +12,22 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.stage.Stage;
 
+import java.text.NumberFormat;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public class RunningJvmsController {
+
+	private static final NumberFormat numberFormat = NumberFormat.getInstance();
 
 	private final SimpleObjectProperty<RunningJvm> currentJvm = new SimpleObjectProperty<>();
 	private final ObservableList<RunningJvm> runningJvms = FXCollections.observableArrayList();
@@ -51,6 +55,10 @@ public class RunningJvmsController {
 
 	public ObjectProperty<RunningJvm> currentJvmProperty() {
 		return currentJvm;
+	}
+
+	public Node getRoot() {
+		return jvmsTitlePane;
 	}
 
 	public void initialize(Stage stage, ScheduledExecutorService scheduledExecutorService) {
@@ -96,10 +104,15 @@ public class RunningJvmsController {
 		jvmsTitlePane.textProperty().bind(Bindings.createStringBinding(() -> {
 			final int visibleProcesses = processes.getItems().size();
 			final int totalProcesses = runningJvms.size();
-			return "Running JVMs (" + (visibleProcesses == totalProcesses ? totalProcesses
-			                                                              : (visibleProcesses + "/" + totalProcesses))
-			       + ")";
+			return "Running JVMs (" + getRunningJvmDisplay(visibleProcesses, totalProcesses) + ")";
 		}, processes.getItems(), searchJvms.textProperty(), runningJvms));
+	}
+
+	private String getRunningJvmDisplay(int visibleProcesses, int totalProcesses) {
+		if (visibleProcesses == totalProcesses) {
+			return numberFormat.format(totalProcesses);
+		}
+		return numberFormat.format(visibleProcesses) + "/" + numberFormat.format(totalProcesses);
 	}
 
 	private void scheduleRunningJvmUpdater() {

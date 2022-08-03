@@ -14,6 +14,9 @@ JVM Explorer is a Java desktop application for browsing loaded class files insid
 * View classloader hierarchy
 * View decompiled bytecode
 * View disassembled bytecode
+* Reassemble bytecode
+* Recompile class file
+* Modify method implementations (insert, replace method body with java code)
 * Execute code in local JVMs
 * Export loaded classes to a JAR file
 * Browse the state of all static variables in a class (and their nested fields)
@@ -112,8 +115,6 @@ Note: this uses the Java Attach API, so any limitations that come with that will
 
 * Plugins/scripting
 * Multiple decompilers
-* Inserting code (compile java code)
-* Editing bytecode
 * Tabs/open multiple classes
 * Search code
 * Detect changes between current classes and previous classes
