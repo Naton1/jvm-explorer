@@ -67,7 +67,7 @@ public class FilterableTreeItem<T> extends TreeItem<T> {
 	}
 
 	// Assumes all children are also FilterableTreeItems
-	// This does not incldue the current node
+	// This does not include the current node
 	private Stream<FilterableTreeItem<T>> bfs(Function<FilterableTreeItem<T>, List<TreeItem<T>>> childFunction) {
 		final Queue<Supplier<Stream<FilterableTreeItem<T>>>> generations = new LinkedList<>();
 		generations.add(() -> childFunction.apply(this)

@@ -6,7 +6,6 @@ import com.github.naton1.jvmexplorer.integration.programs.SleepForeverProgram;
 import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TreeTableView;
 import javafx.scene.control.TreeView;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
@@ -39,7 +38,7 @@ class DecompileClassTest extends EndToEndTest {
 
 			// Verify fields
 			tabPane.getSelectionModel().select(2); // select fields
-			final TreeTableView<?> classFields = fxRobotPlus.lookup("#classFields").queryAs(TreeTableView.class);
+			final TreeView<?> classFields = fxRobotPlus.lookup("#classFields").queryAs(TreeView.class);
 			Assertions.assertTrue(classFields.getRoot().getChildren().size() > 0);
 		}
 	}

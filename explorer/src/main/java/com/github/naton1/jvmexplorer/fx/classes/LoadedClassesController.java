@@ -5,6 +5,7 @@ import com.github.naton1.jvmexplorer.JvmExplorer;
 import com.github.naton1.jvmexplorer.agent.AgentException;
 import com.github.naton1.jvmexplorer.agent.AgentPreparer;
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
+import com.github.naton1.jvmexplorer.fx.TreeViewPlaceholderSkin;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
 import com.github.naton1.jvmexplorer.helper.ClassTreeHelper;
 import com.github.naton1.jvmexplorer.helper.ExportHelper;
@@ -79,10 +80,6 @@ public class LoadedClassesController {
 
 	public ObjectProperty<ClassContent> currentClassProperty() {
 		return currentClass;
-	}
-
-	public Node getRoot() {
-		return classesTitlePane;
 	}
 
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,

@@ -359,7 +359,7 @@ public class ModifyMethodController {
 	private static class MethodDescriptor {
 		private final MethodNode methodNode;
 
-		public String buildTemplate(String methodName, String returnType) {
+		private String buildTemplate(String methodName, String returnType) {
 			final AtomicInteger paramIndex = new AtomicInteger(0);
 			if (!Modifier.isStatic(methodNode.access)) {
 				// 'this' is index 0, so push everything up 1

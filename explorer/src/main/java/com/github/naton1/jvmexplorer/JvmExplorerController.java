@@ -38,6 +38,11 @@ public class JvmExplorerController {
 			new VerboseScheduledExecutorService(Executors.newScheduledThreadPool(
 			8));
 
+	private final ClientHandler clientHandler = ClientHandler.builder()
+	                                                         .onConnect(this::onConnect)
+	                                                         .onDisconnect(this::onDisconnect)
+	                                                         .build();
+
 	@FXML
 	private RunningJvmsController runningJvmsController;
 	@FXML
@@ -50,10 +55,6 @@ public class JvmExplorerController {
 
 	private Stage stage;
 	private AlertHelper alertHelper;
-	private final ClientHandler clientHandler = ClientHandler.builder()
-	                                                         .onConnect(this::onConnect)
-	                                                         .onDisconnect(this::onDisconnect)
-	                                                         .build();
 	private JvmExplorerServer server;
 
 	public void initialize(Stage stage) {
@@ -184,14 +185,9 @@ public class JvmExplorerController {
 
 			jvmExplorerSettings.getX().bind(this.stage.xProperty());
 			jvmExplorerSettings.getY().bind(this.stage.yProperty());
-
-			setupDividers(jvmExplorerSettings);
-
-			// We can modify this after setting the initial settings size
-			SplitPane.setResizableWithParent(runningJvmsController.getRoot(), false);
-			SplitPane.setResizableWithParent(loadedClassesController.getRoot(), false);
-			SplitPane.setResizableWithParent(currentClassController.getRoot(), true);
 		};
+
+		setupDividers(jvmExplorerSettings);
 
 		this.stage.addEventHandler(WindowEvent.WINDOW_SHOWN, onFirstShow);
 		this.stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
@@ -232,13 +228,14 @@ public class JvmExplorerController {
 
 		if (jvmExplorerSettings.getSecondDividerPosition().get() <= 0
 		    || jvmExplorerSettings.getSecondDividerPosition().get() >= 1
-		    || jvmExplorerSettings.getSecondDividerPosition().get() < jvmExplorerSettings.getSecondDividerPosition()
+		    || jvmExplorerSettings.getSecondDividerPosition().get() < jvmExplorerSettings.getFirstDividerPosition()
 		                                                                                 .get()) {
 			jvmExplorerSettings.getSecondDividerPosition().set(0.5);
 		}
 
 		firstDivider.positionProperty().bindBidirectional(jvmExplorerSettings.getFirstDividerPosition());
 		secondDivider.positionProperty().bindBidirectional(jvmExplorerSettings.getSecondDividerPosition());
+		log.debug(firstDivider.getPosition() + " " + secondDivider.getPosition());
 	}
 
 }

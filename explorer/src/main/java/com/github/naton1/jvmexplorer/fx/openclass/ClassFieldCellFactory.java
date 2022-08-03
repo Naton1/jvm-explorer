@@ -1,8 +1,8 @@
 package com.github.naton1.jvmexplorer.fx.openclass;
 
 import com.github.naton1.jvmexplorer.agent.RunningJvm;
-import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
+import com.github.naton1.jvmexplorer.helper.ClipboardHelper;
 import com.github.naton1.jvmexplorer.helper.EditorHelper;
 import com.github.naton1.jvmexplorer.helper.FieldTreeHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
@@ -47,6 +47,14 @@ public class ClassFieldCellFactory implements Callback<TreeView<ClassField>, Tre
 	@Override
 	public TreeCell<ClassField> call(TreeView<ClassField> param) {
 		final TreeCell<ClassField> cell = new TreeCell<>();
+		setupContextMenu(cell);
+		setupTextBinding(cell);
+		setupImageBinding(cell);
+		setupTooltipBinding(cell);
+		return cell;
+	}
+
+	private void setupContextMenu(TreeCell<ClassField> cell) {
 		final ContextMenu rowContextMenu = new ContextMenu();
 		final MenuItem editRow = new MenuItem("Edit Value");
 		editRow.setOnAction(e -> {
@@ -68,16 +76,25 @@ public class ClassFieldCellFactory implements Callback<TreeView<ClassField>, Tre
 				edit(selectedJvm, cell.getTreeItem(), result);
 			});
 		});
-		rowContextMenu.getItems().add(editRow);
-		// Don't show if the row is empty, or the row is a wrapped object. We can't edit those.
-		cell.contextMenuProperty().bind(Bindings.when(Bindings.createBooleanBinding(() -> {
-			final ClassField item = cell.getItem();
-			return item != null && !(item.getValue() instanceof WrappedObject);
-		}, cell.itemProperty())).then(rowContextMenu).otherwise((ContextMenu) null));
-		setupTextBinding(cell);
-		setupImageBinding(cell);
-		setupTooltipBinding(cell);
-		return cell;
+		final MenuItem copyValue = new MenuItem("Copy Value");
+		copyValue.setOnAction(e -> {
+			final ClassField classField = cell.getItem();
+			if (classField == null) {
+				return;
+			}
+			final String stringValue = String.valueOf(classField.getValue());
+			ClipboardHelper.copy(stringValue);
+		});
+		cell.itemProperty().addListener((obs, old, newv) -> {
+			rowContextMenu.getItems().clear();
+			if (newv != null) {
+				if (!(newv.getValue() instanceof WrappedObject)) {
+					rowContextMenu.getItems().addAll(editRow);
+				}
+				rowContextMenu.getItems().addAll(copyValue);
+			}
+		});
+		cell.setContextMenu(rowContextMenu);
 	}
 
 	private void setupImageBinding(TreeCell<ClassField> treeCell) {

@@ -60,6 +60,9 @@ public class AlertHelper {
 	}
 
 	public void showError(String titleText, String headerText) {
+		if (headerText != null && headerText.length() > 500) {
+			headerText = headerText.substring(0, 500) + "...";
+		}
 		final Alert alert = new Alert(Alert.AlertType.ERROR);
 		alert.setTitle(titleText);
 		alert.setHeaderText(headerText);

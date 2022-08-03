@@ -14,7 +14,7 @@ import com.github.naton1.jvmexplorer.bytecode.compile.JavacBytecodeProvider;
 import com.github.naton1.jvmexplorer.bytecode.compile.RemoteJavacBytecodeProvider;
 import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
 import com.github.naton1.jvmexplorer.fx.classes.FilterableTreeItem;
-import com.github.naton1.jvmexplorer.fx.classes.TreeViewPlaceholderSkin;
+import com.github.naton1.jvmexplorer.fx.TreeViewPlaceholderSkin;
 import com.github.naton1.jvmexplorer.fx.method.ModifyMethodController;
 import com.github.naton1.jvmexplorer.helper.AcceleratorHelper;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
@@ -113,10 +113,6 @@ public class CurrentClassController {
 	private CodeAreaHelper codeAreaHelper;
 
 	private FilterableTreeItem<ClassTreeNode> classesTreeRoot;
-
-	public Node getRoot() {
-		return loadedClassTitlePane;
-	}
 
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
 	                       ObjectProperty<RunningJvm> currentJvm, ObjectProperty<ClassContent> currentClass,

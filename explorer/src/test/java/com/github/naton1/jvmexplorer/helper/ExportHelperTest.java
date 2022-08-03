@@ -36,8 +36,11 @@ class ExportHelperTest {
 		final ClassLoaderDescriptor classLoaderDescriptor = ClassLoaderDescriptor.builder().build();
 		final List<LoadedClass> classesToExport = List.of(new LoadedClass("org.test.MyClass", null, null),
 		                                                  new LoadedClass("org.othertest.SomeClass",
-		                                                                  classLoaderDescriptor),
-		                                                  new LoadedClass("testing.Export", classLoaderDescriptor, null));
+		                                                                  classLoaderDescriptor,
+		                                                                  null),
+		                                                  new LoadedClass("testing.Export",
+		                                                                  classLoaderDescriptor,
+		                                                                  null));
 
 		final Map<String, byte[]> classData = classesToExport.stream()
 		                                                     .collect(Collectors.toMap(LoadedClass::getName,

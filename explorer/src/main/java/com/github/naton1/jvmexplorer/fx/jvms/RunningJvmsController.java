@@ -57,10 +57,6 @@ public class RunningJvmsController {
 		return currentJvm;
 	}
 
-	public Node getRoot() {
-		return jvmsTitlePane;
-	}
-
 	public void initialize(Stage stage, ScheduledExecutorService scheduledExecutorService) {
 		final AlertHelper alertHelper = new AlertHelper(stage);
 		this.executorService = scheduledExecutorService;

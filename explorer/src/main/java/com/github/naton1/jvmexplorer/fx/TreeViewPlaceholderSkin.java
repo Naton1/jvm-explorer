@@ -1,4 +1,4 @@
-package com.github.naton1.jvmexplorer.fx.classes;
+package com.github.naton1.jvmexplorer.fx;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.Property;
