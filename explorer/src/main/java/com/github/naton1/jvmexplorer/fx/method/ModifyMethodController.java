@@ -241,6 +241,7 @@ public class ModifyMethodController {
 			methodToModify.instructions.insert(new LabelNode(after));
 			methodToModify.instructions.insert(frame);
 			methodToModify.instructions.insert(updatedMethod.instructions);
+			methodToModify.tryCatchBlocks.addAll(updatedMethod.tryCatchBlocks);
 			if (classNode.version < Opcodes.V1_6) {
 				// F_SAME requires >= V1_6
 				classNode.version = Opcodes.V1_6;
@@ -250,6 +251,8 @@ public class ModifyMethodController {
 		case REPLACE:
 			methodToModify.instructions.clear();
 			methodToModify.instructions.add(updatedMethod.instructions);
+			methodToModify.tryCatchBlocks.clear();
+			methodToModify.tryCatchBlocks.addAll(updatedMethod.tryCatchBlocks);
 			break;
 		}
 		delegateCalls(classNode, methodToModify);

@@ -65,7 +65,7 @@ public class LoadedClass implements Comparable<LoadedClass> {
 			}
 			catch (Throwable t) {
 				// Likely failed to load a dependent class (such as inner class)
-				Log.debug("Failed to get MetaType for " + c + ": " + t.getMessage());
+				Log.debug("Failed to get MetaType for " + c + ": " + t.getClass() + " " + t.getMessage());
 			}
 			return null;
 		}

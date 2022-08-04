@@ -229,25 +229,41 @@ public class InstrumentationHelper {
 		                                                 field.getType().getName(),
 		                                                 Modifier.fieldModifiers() & field.getModifiers());
 		if (fieldValue instanceof Class) {
-			return new ClassField(classKey, new WrappedObject(fieldValue.toString()));
+			return new ClassField(classKey, new WrappedObject(getObjectString(fieldValue)));
 		}
 		if (fieldValue == null || isPrimitiveOrWrapperOrString(fieldValue)) {
 			return new ClassField(classKey, fieldValue);
 		}
-		else if (fieldValue.getClass().isArray() && isPrimitiveOrWrapperOrString(fieldValue.getClass()
-		                                                                                   .getComponentType())) {
+		else if (fieldValue.getClass().isArray() && isPrimitiveOrWrapperOrString(fieldValue.getClass().getComponentType())) {
 			if (instrumentation.getObjectSize(fieldValue) >= MAX_ARRAY_BYTES) {
-				return new ClassField(classKey, new WrappedObject(fieldValue.toString()));
+				return new ClassField(classKey, new WrappedObject(getObjectString(fieldValue)));
 			}
 			return new ClassField(classKey, fieldValue);
 		}
 		else if (fieldValue.getClass().isArray()) {
-			final String arrayAsString = Arrays.deepToString((Object[]) fieldValue);
-			if (arrayAsString.length() < MAX_ARRAY_STRING_LENGTH) {
-				return new ClassField(classKey, new WrappedObject(arrayAsString));
+			try {
+				final String arrayAsString = Arrays.deepToString((Object[]) fieldValue);
+				if (arrayAsString.length() < MAX_ARRAY_STRING_LENGTH) {
+					return new ClassField(classKey, new WrappedObject(arrayAsString));
+				}
+			}
+			catch (Exception e) {
+				// deepToString calls toString on the objects which could throw an exception
+				Log.warn("Failed to get string representation of " + fieldValue, e);
 			}
 		}
-		return new ClassField(classKey, new WrappedObject(fieldValue.toString()));
+		return new ClassField(classKey, new WrappedObject(getObjectString(fieldValue)));
+	}
+
+	private String getObjectString(Object fieldValue) {
+		try {
+			return String.valueOf(fieldValue);
+		}
+		catch (Exception e) {
+			// toString can throw an exception, we don't know the implementation
+			Log.warn("Failed to get string representation of " + fieldValue, e);
+			return fieldValue.getClass().getName();
+		}
 	}
 
 	private static boolean isPrimitiveOrWrapperOrString(Object object) {

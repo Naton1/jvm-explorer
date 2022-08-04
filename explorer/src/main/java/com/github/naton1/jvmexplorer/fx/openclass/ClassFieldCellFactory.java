@@ -68,6 +68,7 @@ public class ClassFieldCellFactory implements Callback<TreeView<ClassField>, Tre
 			dialog.setTitle("Update Field");
 			dialog.setHeaderText("Enter new value:");
 			dialog.setContentText(null);
+			dialog.initOwner(cell.getScene().getWindow());
 			dialog.showAndWait().ifPresent(result -> {
 				final RunningJvm selectedJvm = currentJvm.get();
 				if (selectedJvm == null) {
