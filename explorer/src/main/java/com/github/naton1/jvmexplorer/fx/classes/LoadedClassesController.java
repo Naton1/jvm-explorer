@@ -22,7 +22,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
@@ -94,6 +93,10 @@ public class LoadedClassesController {
 		this.serverPort = serverPort;
 		this.settings = settings;
 		initialize();
+	}
+
+	public void select(TreeItem<ClassTreeNode> itemToSelect) {
+		classes.getSelectionModel().select(itemToSelect);
 	}
 
 	private void initialize() {

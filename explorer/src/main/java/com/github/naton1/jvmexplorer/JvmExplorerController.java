@@ -115,7 +115,8 @@ public class JvmExplorerController {
 		                                       clientHandler,
 		                                       currentJvm,
 		                                       currentClass,
-		                                       classesTreeRoot);
+		                                       classesTreeRoot,
+		                                       loadedClassesController::select);
 	}
 
 	private void initializeStage(JvmExplorerSettings jvmExplorerSettings) {

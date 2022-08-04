@@ -12,9 +12,9 @@ import com.github.naton1.jvmexplorer.bytecode.compile.CompileResult;
 import com.github.naton1.jvmexplorer.bytecode.compile.Compiler;
 import com.github.naton1.jvmexplorer.bytecode.compile.JavacBytecodeProvider;
 import com.github.naton1.jvmexplorer.bytecode.compile.RemoteJavacBytecodeProvider;
+import com.github.naton1.jvmexplorer.fx.TreeViewPlaceholderSkin;
 import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
 import com.github.naton1.jvmexplorer.fx.classes.FilterableTreeItem;
-import com.github.naton1.jvmexplorer.fx.TreeViewPlaceholderSkin;
 import com.github.naton1.jvmexplorer.fx.method.ModifyMethodController;
 import com.github.naton1.jvmexplorer.helper.AcceleratorHelper;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
@@ -41,7 +41,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
@@ -55,6 +54,7 @@ import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
@@ -113,10 +113,12 @@ public class CurrentClassController {
 	private CodeAreaHelper codeAreaHelper;
 
 	private FilterableTreeItem<ClassTreeNode> classesTreeRoot;
+	private Consumer<TreeItem<ClassTreeNode>> handleSelection;
 
 	public void initialize(Stage stage, ScheduledExecutorService executorService, ClientHandler clientHandler,
 	                       ObjectProperty<RunningJvm> currentJvm, ObjectProperty<ClassContent> currentClass,
-	                       FilterableTreeItem<ClassTreeNode> classesTreeRoot) {
+	                       FilterableTreeItem<ClassTreeNode> classesTreeRoot,
+	                       Consumer<TreeItem<ClassTreeNode>> handleSelection) {
 		this.executorService = executorService;
 		this.clientHandler = clientHandler;
 		this.currentJvm = currentJvm;
@@ -124,6 +126,7 @@ public class CurrentClassController {
 		this.alertHelper = new AlertHelper(stage);
 		this.codeAreaHelper = new CodeAreaHelper(executorService);
 		this.classesTreeRoot = classesTreeRoot;
+		this.handleSelection = handleSelection;
 		initialize();
 	}
 
@@ -317,6 +320,15 @@ public class CurrentClassController {
 
 		editor.editableProperty().bind(allowEditing);
 
+		editor.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+			if (!e.isControlDown()) {
+				return;
+			}
+			final int position = editor.getCaretPosition();
+			final String s = editor.getText();
+			openClassAtCursor(position, s);
+		});
+
 		final BooleanBinding editorModified = Bindings.createBooleanBinding(() -> {
 			if (!allowEditing.get()) {
 				return false;
@@ -371,6 +383,56 @@ public class CurrentClassController {
 		contextMenu.getItems().addAll(save, reset);
 
 		editor.setContextMenu(contextMenu);
+	}
+
+	private void openClassAtCursor(int cursorPosition, String text) {
+		if (Character.isJavaIdentifierPart(text.charAt(cursorPosition))) {
+
+			// Find the left-most character
+			int startIndex = cursorPosition;
+			while (startIndex >= 0 && Character.isJavaIdentifierPart(text.charAt(startIndex))) {
+				startIndex--;
+			}
+			startIndex++;
+
+			// Find the start
+			while (startIndex < text.length() && !Character.isJavaIdentifierStart(text.charAt(startIndex))) {
+				startIndex++;
+			}
+
+			// Find the right-most character
+			int endIndex = cursorPosition;
+			while (endIndex < text.length() && Character.isJavaIdentifierPart(text.charAt(endIndex))) {
+				endIndex++;
+			}
+			endIndex--;
+
+			if (startIndex >= endIndex) {
+				// Invalid
+				return;
+			}
+
+			final String javaName = text.substring(startIndex, endIndex + 1);
+			log.debug("Found java name at mouse click: {}", javaName);
+
+			final TreeItem<ClassTreeNode> correspondingClass = classesTreeRoot.streamSourceItems()
+			                                                                  .filter(f -> f.getValue() != null)
+			                                                                  .filter(f -> f.getValue().getType()
+			                                                                               == ClassTreeNode.Type.CLASS)
+			                                                                  .filter(f -> f.getValue()
+			                                                                                .getLoadedClass()
+			                                                                                .getSimpleName()
+			                                                                                .equals(javaName))
+			                                                                  .findFirst()
+			                                                                  .orElse(null);
+
+			if (correspondingClass == null) {
+				return;
+			}
+
+			log.debug("Found {}", correspondingClass.getValue());
+			handleSelection.accept(correspondingClass);
+		}
 	}
 
 	private void setupTitlePaneText() {

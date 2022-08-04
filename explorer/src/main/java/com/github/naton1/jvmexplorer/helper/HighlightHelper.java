@@ -81,7 +81,7 @@ public class HighlightHelper {
 		patternMap.put("string", "\"([^\"\\\\]|\\\\.)*\"");
 		patternMap.put("comment", "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/");
 		patternMap.put("annotation", "@[a-zA-Z\\d\\.]+");
-		patternMap.put("number", "(?<=[^\\w])\\d+");
+		patternMap.put("number", "(?<=[^\\w$])\\d+");
 		PATTERN_GROUPS = Collections.unmodifiableSet(patternMap.keySet());
 		PATTERN = Pattern.compile(patternMap.entrySet()
 		                                    .stream()
