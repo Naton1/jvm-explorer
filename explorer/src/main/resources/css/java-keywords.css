@@ -37,3 +37,8 @@
 .annotation {
     -fx-fill: #9d874c
 }
+
+.number {
+    -fx-fill: #0033B3;
+    -fx-font-weight: bold;
+}

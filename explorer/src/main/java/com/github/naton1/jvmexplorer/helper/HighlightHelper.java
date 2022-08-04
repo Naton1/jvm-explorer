@@ -6,6 +6,7 @@ import org.fxmisc.richtext.model.StyleSpansBuilder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -71,7 +72,7 @@ public class HighlightHelper {
 	private static final Pattern PATTERN;
 
 	static {
-		final Map<String, String> patternMap = new HashMap<>();
+		final Map<String, String> patternMap = new LinkedHashMap<>();
 		patternMap.put("keyword", "\\b(" + String.join("|", KEYWORDS) + ")\\b");
 		patternMap.put("paren", "[()]");
 		patternMap.put("brace", "[{}]");
@@ -80,6 +81,7 @@ public class HighlightHelper {
 		patternMap.put("string", "\"([^\"\\\\]|\\\\.)*\"");
 		patternMap.put("comment", "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/");
 		patternMap.put("annotation", "@[a-zA-Z\\d\\.]+");
+		patternMap.put("number", "(?<=[^\\w])\\d+");
 		PATTERN_GROUPS = Collections.unmodifiableSet(patternMap.keySet());
 		PATTERN = Pattern.compile(patternMap.entrySet()
 		                                    .stream()
