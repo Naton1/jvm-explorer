@@ -114,7 +114,7 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 				imagePath = "icons/exceptionClass.png";
 				break;
 			case ABSTRACT_EXCEPTION:
-				imagePath = "icons/abstractException.class";
+				imagePath = "icons/abstractException.png";
 				break;
 			case ANONYMOUS:
 				imagePath = "icons/anonymousClass.png";

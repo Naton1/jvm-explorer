@@ -27,6 +27,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
@@ -120,6 +121,25 @@ public class LoadedClassesController {
 			};
 		}, searchClasses.textProperty()));
 		classes.setRoot(classesTreeRoot);
+
+		searchClasses.setOnKeyPressed(e -> {
+			if (e.getCode() == KeyCode.ENTER) {
+				final String className = searchClasses.getText();
+				log.debug("Pressed enter, attempting to quick-select {}", className);
+				classesTreeRoot.streamSourceItems()
+				               .filter(i -> i.getValue() != null)
+				               .filter(i -> i.getValue().getType() == ClassTreeNode.Type.CLASS)
+				               .filter(i -> i.getValue().getLoadedClass().getSimpleName().equals(className)
+				                            || i.getValue().getLoadedClass().getName().equals(className))
+				               .findFirst()
+				               .ifPresent(selected -> {
+					               // reset first, or javafx breaks and selects the wrong thing
+					               searchClasses.clear();
+					               log.debug("Quick-selected {}", selected);
+					               select(selected);
+				               });
+			}
+		});
 	}
 
 	private void setupAgentLoader() {

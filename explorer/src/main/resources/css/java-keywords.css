@@ -26,6 +26,10 @@
     -fx-fill: #067D17;
 }
 
+.char {
+    -fx-fill: #067D17;
+}
+
 .comment {
     -fx-fill: #8C8C8C;
 }
@@ -40,5 +44,16 @@
 
 .number {
     -fx-fill: #0033B3;
-    -fx-font-weight: bold;
+}
+
+.method {
+    -fx-fill: #00627a;
+}
+
+.field {
+    -fx-fill: #871094;
+}
+
+.label {
+    -fx-fill: #0033B3;
 }

@@ -7,9 +7,13 @@ import org.objectweb.asm.tree.ClassNode;
 public class AsmHelper {
 
 	public static ClassNode parse(byte[] classFile) {
+		return parse(classFile, 0);
+	}
+
+	public static ClassNode parse(byte[] classFile, int parsingOptions) {
 		final ClassReader classReader = new ClassReader(classFile);
 		final ClassNode classNode = new ClassNode();
-		classReader.accept(classNode, 0);
+		classReader.accept(classNode, parsingOptions);
 		return classNode;
 	}
 

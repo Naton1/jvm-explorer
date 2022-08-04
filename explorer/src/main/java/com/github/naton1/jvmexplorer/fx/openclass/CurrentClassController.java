@@ -18,11 +18,13 @@ import com.github.naton1.jvmexplorer.fx.classes.FilterableTreeItem;
 import com.github.naton1.jvmexplorer.fx.method.ModifyMethodController;
 import com.github.naton1.jvmexplorer.helper.AcceleratorHelper;
 import com.github.naton1.jvmexplorer.helper.AlertHelper;
+import com.github.naton1.jvmexplorer.helper.AsmHelper;
 import com.github.naton1.jvmexplorer.helper.ClassTreeHelper;
 import com.github.naton1.jvmexplorer.helper.CodeAreaHelper;
 import com.github.naton1.jvmexplorer.helper.DialogHelper;
 import com.github.naton1.jvmexplorer.helper.EditorHelper;
 import com.github.naton1.jvmexplorer.helper.FieldTreeHelper;
+import com.github.naton1.jvmexplorer.helper.HighlightHelper;
 import com.github.naton1.jvmexplorer.net.ClientHandler;
 import com.github.naton1.jvmexplorer.protocol.ClassContent;
 import com.github.naton1.jvmexplorer.protocol.ClassField;
@@ -58,6 +60,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.CodeArea;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -463,7 +467,18 @@ public class CurrentClassController {
 				disassembledClass.set(newDisassembledClass);
 			});
 			loadChildren(classFields.getRoot(), newv.getClassFields());
+			loadHighlightContext(newv.getClassContent());
 		}
+	}
+
+	private void loadHighlightContext(byte[] newClass) {
+		final ClassNode classNode = AsmHelper.parse(newClass,
+		                                            ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE
+		                                            | ClassReader.SKIP_DEBUG);
+		final String propName = HighlightHelper.HighlightContext.class.getName();
+		final HighlightHelper.HighlightContext context = HighlightHelper.createContextFor(classNode);
+		bytecode.getProperties().put(propName, context);
+		classFile.getProperties().put(propName, context);
 	}
 
 	private void processBytecode(ClassContent classContent, BytecodeTextifier bytecodeTextifier, CodeArea codeArea,

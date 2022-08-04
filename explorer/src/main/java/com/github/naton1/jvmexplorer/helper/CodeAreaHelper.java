@@ -10,6 +10,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.WindowEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
@@ -29,7 +30,6 @@ import java.util.regex.Pattern;
 @Slf4j
 public class CodeAreaHelper {
 
-	private final HighlightHelper highlightHelper = new HighlightHelper();
 	private final ExecutorService executorService;
 
 	// CodeArea must be in a VBox to replace and insert into VirtualizedScrollPane
@@ -91,25 +91,45 @@ public class CodeAreaHelper {
 		});
 	}
 
-	private Task<StyleSpans<Collection<String>>> computeHighlighting(CodeArea codeArea) {
+	private Task<HighlightContainer> computeHighlighting(CodeArea codeArea) {
 		final String text = codeArea.getText();
-		final Task<StyleSpans<Collection<String>>> task = new Task<>() {
+		final String propName = HighlightHelper.HighlightContext.class.getName();
+		final var highlightContext = (HighlightHelper.HighlightContext) codeArea.getProperties().get(propName);
+		final Task<HighlightContainer> task = new Task<>() {
 			@Override
-			protected StyleSpans<Collection<String>> call() {
-				return highlightHelper.computeHighlighting(text);
+			protected HighlightContainer call() {
+				final StyleSpans<Collection<String>> highlighting;
+				if (highlightContext != null) {
+					highlighting = HighlightHelper.computeHighlighting(text, highlightContext);
+				}
+				else {
+					highlighting = HighlightHelper.computeHighlighting(text);
+				}
+				return new HighlightContainer(highlighting, text);
 			}
 		};
 		executorService.execute(task);
 		return task;
 	}
 
-	private void applyHighlighting(CodeArea codeArea, StyleSpans<Collection<String>> highlighting) {
-		codeArea.setStyleSpans(0, highlighting);
+	private void applyHighlighting(CodeArea codeArea, HighlightContainer highlighting) {
+		if (!codeArea.getText().equals(highlighting.getText())) {
+			log.debug("Detected text change; aborting highlight change");
+			return;
+		}
+		codeArea.setStyleSpans(0, highlighting.getHightlighting());
 	}
 
 	public void triggerHighlightUpdate(CodeArea codeArea) {
-		final Task<StyleSpans<Collection<String>>> initialTask = computeHighlighting(codeArea);
+		final Task<HighlightContainer> initialTask = computeHighlighting(codeArea);
 		initialTask.setOnSucceeded(e -> applyHighlighting(codeArea, initialTask.getValue()));
+	}
+
+	// Prevent highlighting the wrong text if the text changes
+	@Value
+	private static class HighlightContainer {
+		private final StyleSpans<Collection<String>> hightlighting;
+		private final String text;
 	}
 
 }
