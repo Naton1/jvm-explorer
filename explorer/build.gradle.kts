@@ -4,6 +4,7 @@ plugins {
     application
     jacoco
     id("com.google.osdetector") version "1.7.0"
+    id("org.panteleyev.jpackageplugin") version "1.3.1"
 }
 
 group = "com.github.naton1"
@@ -150,6 +151,16 @@ tasks {
         useJUnitPlatform()
         testClassesDirs = sourceSets.getByName("integration").output.classesDirs
         classpath = sourceSets.getByName("integration").runtimeClasspath
+    }
+    jpackage {
+        dependsOn(jar)
+        input = jar.get().archiveFile.get().asFile.parent
+        appName = "JVM Explorer"
+        vendor = "com.github.naton1"
+        mainJar = jar.get().archiveFileName.get()
+        mainClass = application.mainClass.get()
+        javaOptions = listOf()
+        destination = "$buildDir/jpackage"
     }
 }
 

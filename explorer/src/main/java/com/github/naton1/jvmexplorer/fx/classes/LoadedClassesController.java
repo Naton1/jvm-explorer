@@ -302,6 +302,10 @@ public class LoadedClassesController {
 		log.debug("Received loaded classes for {}", runningJvm);
 		final ClassTreeNode classTreeRoot = buildClassTree(loadedClasses);
 		Platform.runLater(() -> {
+			if (!runningJvm.equals(currentJvm.get())) {
+				log.debug("JVM changed from {}, ignoring loaded classes", runningJvm);
+				return;
+			}
 			final FilterableTreeItem<ClassTreeNode> root = classTreeRoot.toTreeItem();
 			classesTreeRoot.getSourceChildren().setAll(root.getSourceChildren());
 			loadedClassProgressCount.set(CLASSES_NOT_LOADING);
