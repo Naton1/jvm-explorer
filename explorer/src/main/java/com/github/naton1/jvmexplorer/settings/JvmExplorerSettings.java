@@ -27,10 +27,10 @@ public class JvmExplorerSettings {
 	                                       .setPrettyPrinting()
 	                                       .create();
 
-	private final SimpleBooleanProperty showClassLoader = new SimpleBooleanProperty();
+	private final SimpleBooleanProperty showClassLoader = new SimpleBooleanProperty(false);
 
-	private final SimpleDoubleProperty firstDividerPosition = new SimpleDoubleProperty();
-	private final SimpleDoubleProperty secondDividerPosition = new SimpleDoubleProperty();
+	private final SimpleDoubleProperty firstDividerPosition = new SimpleDoubleProperty(0.23);
+	private final SimpleDoubleProperty secondDividerPosition = new SimpleDoubleProperty(0.5);
 
 	private final SimpleDoubleProperty width = new SimpleDoubleProperty(Double.NaN);
 	private final SimpleDoubleProperty height = new SimpleDoubleProperty(Double.NaN);

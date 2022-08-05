@@ -25,6 +25,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
@@ -140,6 +141,10 @@ public class LoadedClassesController {
 				               });
 			}
 		});
+
+		final Tooltip tooltip = new Tooltip();
+		tooltip.setText("You can also press Enter to directly open a class with the searched name");
+		searchClasses.setTooltip(tooltip);
 	}
 
 	private void setupAgentLoader() {

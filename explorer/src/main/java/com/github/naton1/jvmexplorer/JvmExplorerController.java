@@ -186,9 +186,22 @@ public class JvmExplorerController {
 
 			jvmExplorerSettings.getX().bind(this.stage.xProperty());
 			jvmExplorerSettings.getY().bind(this.stage.yProperty());
-		};
 
-		setupDividers(jvmExplorerSettings);
+			final SplitPane.Divider firstDivider = splitPane.getDividers().get(0);
+			final SplitPane.Divider secondDivider = splitPane.getDividers().get(1);
+
+			// Let's set it a first time to try and prevent graphical issues
+			firstDivider.positionProperty().set(jvmExplorerSettings.getFirstDividerPosition().get());
+			secondDivider.positionProperty().set(jvmExplorerSettings.getSecondDividerPosition().get());
+
+			Platform.runLater(() -> {
+				// Divider positions not respected if scene size != stage on initial show
+				// Therefor we have to run this later after the scene shows the first time
+				// https://stackoverflow.com/questions/15041332/javafx-splitpane-divider-position-inconsistent-behaviour
+				firstDivider.positionProperty().bindBidirectional(jvmExplorerSettings.getFirstDividerPosition());
+				secondDivider.positionProperty().bindBidirectional(jvmExplorerSettings.getSecondDividerPosition());
+			});
+		};
 
 		this.stage.addEventHandler(WindowEvent.WINDOW_SHOWN, onFirstShow);
 		this.stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
@@ -214,29 +227,6 @@ public class JvmExplorerController {
 				runningJvmsController.setCurrentJvm(null);
 			}
 		});
-	}
-
-	private void setupDividers(JvmExplorerSettings jvmExplorerSettings) {
-		final SplitPane.Divider firstDivider = splitPane.getDividers().get(0);
-		final SplitPane.Divider secondDivider = splitPane.getDividers().get(1);
-
-		if (jvmExplorerSettings.getFirstDividerPosition().get() <= 0
-		    || jvmExplorerSettings.getFirstDividerPosition().get() >= 1
-		    || jvmExplorerSettings.getFirstDividerPosition().get() > jvmExplorerSettings.getSecondDividerPosition()
-		                                                                                .get()) {
-			jvmExplorerSettings.getFirstDividerPosition().set(0.24);
-		}
-
-		if (jvmExplorerSettings.getSecondDividerPosition().get() <= 0
-		    || jvmExplorerSettings.getSecondDividerPosition().get() >= 1
-		    || jvmExplorerSettings.getSecondDividerPosition().get() < jvmExplorerSettings.getFirstDividerPosition()
-		                                                                                 .get()) {
-			jvmExplorerSettings.getSecondDividerPosition().set(0.5);
-		}
-
-		firstDivider.positionProperty().bindBidirectional(jvmExplorerSettings.getFirstDividerPosition());
-		secondDivider.positionProperty().bindBidirectional(jvmExplorerSettings.getSecondDividerPosition());
-		log.debug(firstDivider.getPosition() + " " + secondDivider.getPosition());
 	}
 
 }

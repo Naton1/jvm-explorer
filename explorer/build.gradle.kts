@@ -1,11 +1,9 @@
-import org.openjfx.gradle.JavaFXPlatform
-
 plugins {
     java
-    id("org.openjfx.javafxplugin") version "0.0.13"
     id("io.freefair.lombok") version "6.5.0.3"
     application
     jacoco
+    id("com.google.osdetector") version "1.7.0"
 }
 
 group = "com.github.naton1"
@@ -15,11 +13,6 @@ repositories {
     mavenCentral()
     maven("https://maven.quiltmc.org/repository/release/")
     maven("https://oss.sonatype.org/content/repositories/snapshots/")
-}
-
-javafx {
-    version = "18.0.1"
-    modules = listOf("javafx.base", "javafx.graphics", "javafx.fxml", "javafx.controls")
 }
 
 java {
@@ -32,6 +25,9 @@ application {
 }
 
 val asmVersion = "9.3"
+val javaFxPlatform = JavaFXPlatform.detect(project).classifier
+print(javaFxPlatform)
+val javaFxVersion = "18.0.1"
 
 dependencies {
     implementation(project(":protocol"))
@@ -51,19 +47,10 @@ dependencies {
 
     implementation("org.openjdk.asmtools:asmtools-core:7.0.b10-ea")
 
-    // Let's build a fat jar for now... this includes the java runtime deps for windows/linux/mac
-    implementation("org.openjfx:javafx-base:${javafx.version}:${JavaFXPlatform.WINDOWS.classifier}")
-    implementation("org.openjfx:javafx-base:${javafx.version}:${JavaFXPlatform.LINUX.classifier}")
-    implementation("org.openjfx:javafx-base:${javafx.version}:${JavaFXPlatform.OSX.classifier}")
-    implementation("org.openjfx:javafx-controls:${javafx.version}:${JavaFXPlatform.WINDOWS.classifier}")
-    implementation("org.openjfx:javafx-controls:${javafx.version}:${JavaFXPlatform.LINUX.classifier}")
-    implementation("org.openjfx:javafx-controls:${javafx.version}:${JavaFXPlatform.OSX.classifier}")
-    implementation("org.openjfx:javafx-graphics:${javafx.version}:${JavaFXPlatform.WINDOWS.classifier}")
-    implementation("org.openjfx:javafx-graphics:${javafx.version}:${JavaFXPlatform.LINUX.classifier}")
-    implementation("org.openjfx:javafx-graphics:${javafx.version}:${JavaFXPlatform.OSX.classifier}")
-    implementation("org.openjfx:javafx-fxml:${javafx.version}:${JavaFXPlatform.WINDOWS.classifier}")
-    implementation("org.openjfx:javafx-fxml:${javafx.version}:${JavaFXPlatform.LINUX.classifier}")
-    implementation("org.openjfx:javafx-fxml:${javafx.version}:${JavaFXPlatform.OSX.classifier}")
+    implementation("org.openjfx:javafx-base:${javaFxVersion}:${javaFxPlatform}")
+    implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javaFxPlatform}")
+    implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javaFxPlatform}")
+    implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javaFxPlatform}")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")
@@ -71,7 +58,7 @@ dependencies {
     testImplementation("org.mockito:mockito-junit-jupiter:3.12.4")
 
     // Allows screenshots
-    testImplementation("org.openjfx:javafx-swing:${javafx.version}:${JavaFXPlatform.detect(project).classifier}")
+    testImplementation("org.openjfx:javafx-swing:${javaFxVersion}:${javaFxPlatform}")
 }
 
 sourceSets {
@@ -164,4 +151,30 @@ tasks {
         testClassesDirs = sourceSets.getByName("integration").output.classesDirs
         classpath = sourceSets.getByName("integration").runtimeClasspath
     }
+}
+
+// Based on https://github.com/openjfx/javafx-gradle-plugin/blob/master/src/main/java/org/openjfx/gradle/JavaFXPlatform.java
+// but they don't support all os versions
+enum class JavaFXPlatform(val classifier: String, private val osDetectorClassifier: String) {
+
+    LINUX("linux", "linux-x86_64"),
+    LINUX_AARCH64("linux-aarch64", "linux-aarch_64"),
+    WINDOWS("win", "windows-x86_64"),
+    WINDOWS_X86("win-x86", "windows-x86_32"),
+    OSX("mac", "osx-x86_64"),
+    OSX_AARCH64("mac-aarch64", "osx-aarch_64"),
+    ;
+
+    companion object {
+        fun detect(project: Project): JavaFXPlatform {
+            val osClassifier: String = project.extensions.getByType(com.google.gradle.osdetector.OsDetector::class.java).getClassifier()
+            for (platform: JavaFXPlatform in values()) {
+                if (platform.osDetectorClassifier == osClassifier) {
+                    return platform
+                }
+            }
+            throw GradleException("Unsupported JavaFX platform found: $osClassifier")
+        }
+    }
+
 }

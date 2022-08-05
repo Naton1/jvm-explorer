@@ -72,9 +72,11 @@ public class ClassTreeHelper {
 			                      .map(ClassTreeNode::getLoadedClass)
 			                      .collect(Collectors.toList());
 		}
-		return getNodeClassLoaderTreeItemStream(classLoaderNode).map(this::getClassesLoadedIn)
-		                                                        .flatMap(List::stream)
-		                                                        .collect(Collectors.toList());
+		// Include the class tree root to account for bootstrap class loader which doesn't show up here
+		return Stream.concat(getNodeClassLoaderTreeItemStream(classLoaderNode), Stream.of(classesTreeRoot))
+		             .map(this::getClassesLoadedIn)
+		             .flatMap(List::stream)
+		             .collect(Collectors.toList());
 	}
 
 	public Stream<TreeItem<ClassTreeNode>> getNodeClassLoaderTreeItemStream(TreeItem<ClassTreeNode> treeItem) {
@@ -82,6 +84,7 @@ public class ClassTreeHelper {
 		             .filter(p -> p.getValue().getType() == ClassTreeNode.Type.CLASSLOADER);
 	}
 
+	// classLoaderNode can be the root/null value to indicate bootstrap class loader
 	private List<LoadedClass> getClassesLoadedIn(TreeItem<ClassTreeNode> classLoaderNode) {
 		final Queue<TreeItem<ClassTreeNode>> frontier = new ArrayDeque<>(getChildren(classLoaderNode));
 		final List<LoadedClass> loadedClasses = new ArrayList<>();

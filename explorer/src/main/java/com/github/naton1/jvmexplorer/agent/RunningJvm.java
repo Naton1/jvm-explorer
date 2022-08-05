@@ -77,6 +77,11 @@ public class RunningJvm {
 				return;
 			}
 			log.warn("Failed to attach to jvm: " + this, e);
+			if (JdkPatcher.patchJdkForAgent(this)) {
+				log.debug("Patched target jvm, retrying load");
+				loadAgent(agentPath, agentArgs);
+				return;
+			}
 			throw new AgentException(e.getMessage(), e);
 		}
 	}
