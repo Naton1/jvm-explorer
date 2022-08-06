@@ -67,10 +67,10 @@ dependencies {
         implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javaFxPlatform}")
     }
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")
-    testImplementation("org.mockito:mockito-core:3.+")
-    testImplementation("org.mockito:mockito-junit-jupiter:3.12.4")
+    testImplementation("org.mockito:mockito-core:4.6.1")
+    testImplementation("org.mockito:mockito-junit-jupiter:4.6.1")
 
     // Allow screenshots
     testImplementation("org.openjfx:javafx-swing:${javaFxVersion}:${javaFxPlatform}")

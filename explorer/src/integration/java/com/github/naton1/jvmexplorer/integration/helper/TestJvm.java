@@ -28,6 +28,9 @@ public class TestJvm implements AutoCloseable {
 		                                       List.of(this.mainClassName),
 		                                       programArgs).flatMap(Collection::stream).collect(Collectors.toList());
 		final ProcessBuilder processBuilder = new ProcessBuilder().command(command).directory(workingDirectory);
+		// Gradle adds classpath env var which breaks this...
+		// (to make it better, it works with intellij, it works on linux, but it fails on windows not with intellij)
+		processBuilder.environment().remove("CLASSPATH");
 		if (!handleIOManually) {
 			processBuilder.inheritIO();
 		}
@@ -36,6 +39,7 @@ public class TestJvm implements AutoCloseable {
 			// Also send error to std out to make it easier
 			processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT).redirectErrorStream(true);
 		}
+		System.out.println("Launching Test JVM: " + command + " in " + workingDirectory);
 		this.process = processBuilder.start();
 		System.out.println("Launched JVM with class: " + sourceClass + ", pid: " + this.process.pid());
 	}
