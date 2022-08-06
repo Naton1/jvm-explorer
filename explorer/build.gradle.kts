@@ -182,6 +182,10 @@ tasks {
         linux {
             linuxShortcut = true
         }
+        mac {
+            // mac doesn't let the version start with 0, TODO remove when version is at least 1
+            appVersion = "1.0.0"
+        }
     }
 }
 
