@@ -27,7 +27,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: ./gradlew build
+        run: ./gradlew build --info
 
       - name: Extract Version
         id: extract_version
@@ -38,7 +38,7 @@ jobs:
       - name: Run Integration Tests
         uses: GabrielBB/xvfb-action@v1.6
         with:
-          run: ./gradlew integrationTest
+          run: ./gradlew integrationTest --info
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
@@ -49,12 +49,12 @@ jobs:
       - name: Run Headless Jar Health Test
         uses: GabrielBB/xvfb-action@v1.6
         with:
-          run: ./gradlew verifyJarStarts
+          run: ./gradlew verifyJarStarts --info
 
       - name: Package
         if: matrix.java-version == 17
         shell: bash
-        run: ./gradlew jpackage --info --stacktrace
+        run: ./gradlew jpackage --info
 
       - name: GitHub Release Installer
         if: matrix.java-version == 17
@@ -70,10 +70,10 @@ jobs:
         with:
           run: |
             export FAT_JAR=true
-            ./gradlew clean
-            ./gradlew build
-            ./gradlew integrationTest
-            ./gradlew verifyJarStarts
+            ./gradlew clean --info
+            ./gradlew build --info
+            ./gradlew integrationTest --info
+            ./gradlew verifyJarStarts --info
 
       - name: GitHub Release Jar
         if: matrix.java-version == 11 && matrix.os == 'ubuntu-latest'

@@ -6,6 +6,7 @@ import com.github.naton1.jvmexplorer.agent.RunningJvmLoader;
 import com.github.naton1.jvmexplorer.integration.helper.TestHelper;
 import com.github.naton1.jvmexplorer.integration.helper.TestJvm;
 import com.github.naton1.jvmexplorer.integration.programs.LaunchAnotherJvmProgram;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
+@Slf4j
 class LaunchPatchAgentTest {
 
 	// This is a sanity test to ensure we normally can't attach
@@ -32,7 +34,9 @@ class LaunchPatchAgentTest {
 	private long getLaunchedProcessId(TestJvm testJvm) throws Exception {
 		try (final BufferedReader br = new BufferedReader(new InputStreamReader(testJvm.getProcess().getInputStream()))
 		) {
-			return br.lines().filter(s -> s.matches("\\d+")).findFirst().map(Long::parseLong).orElseThrow();
+			return br.lines()
+					.peek(line -> log.debug("Output from launched process: {}", line))
+			         .filter(s -> s.matches("\\d+")).findFirst().map(Long::parseLong).orElseThrow();
 		}
 	}
 
