@@ -40,7 +40,7 @@ jobs:
         with:
           run: ./gradlew integrationTest
 
-      - name: Publish Test Results ${{ matrix.os }} Java ${{ matrix.java-version }}
+      - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always()
         with:
@@ -52,12 +52,12 @@ jobs:
           run: ./gradlew verifyJarStarts
 
       - name: Package
-        if: ${{ matrix.java-version }} == 17
+        if: ${{ matrix.java-version == 17 }}
         shell: bash
         run: ./gradlew jpackage
 
       - name: GitHub Release Installer
-        if: ${{ matrix.java-version }} == 17
+        if: ${{ matrix.java-version == 17 }}
         uses: softprops/action-gh-release@v0.1.14
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}
@@ -65,7 +65,7 @@ jobs:
           fail_on_unmatched_files: true
 
       - name: Build Cross Platform Jar
-        if: ${{ matrix.java-version }} == 11 && ${{ matrix.os }} == ubuntu-latest
+        if: ${{ matrix.java-version == 11 }} && ${{ matrix.os == ubuntu-latest }}
         uses: GabrielBB/xvfb-action@v1.6
         with:
           run: |
@@ -76,7 +76,7 @@ jobs:
             ./gradlew verifyJarStarts
 
       - name: GitHub Release Jar
-        if: ${{ matrix.java-version }} == 11 && ${{ matrix.os }} == ubuntu-latest
+        if: ${{ matrix.java-version == 11 }} && ${{ matrix.os == ubuntu-latest }}
         uses: softprops/action-gh-release@v0.1.14
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}
