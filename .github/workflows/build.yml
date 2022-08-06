@@ -41,7 +41,7 @@ jobs:
           run: ./gradlew integrationTest
 
       - name: Publish Test Results ${{ matrix.os }} Java ${{ matrix.java-version }}
-        uses: EnricoMi/publish-unit-test-result-action@v1
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always()
         with:
           files: "**/test-results/**/*.xml"
@@ -50,6 +50,11 @@ jobs:
         uses: GabrielBB/xvfb-action@v1.6
         with:
           run: ./gradlew verifyJarStarts
+
+      - name: Package
+        if: ${{ matrix.java-version }} == 17
+        shell: bash
+        run: ./gradlew jpackage
 
       - name: GitHub Release Installer
         if: ${{ matrix.java-version }} == 17
