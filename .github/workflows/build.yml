@@ -54,7 +54,7 @@ jobs:
       - name: Package
         if: matrix.java-version == 17
         shell: bash
-        run: ./gradlew jpackage
+        run: ./gradlew jpackage --info --stacktrace
 
       - name: GitHub Release Installer
         if: matrix.java-version == 17
