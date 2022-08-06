@@ -175,7 +175,6 @@ tasks {
         mainClass = application.mainClass.get()
         javaOptions = listOf()
         destination = "$buildDir/jpackage"
-        type = org.panteleyev.jpackage.ImageType.APP_IMAGE
         windows {
             winDirChooser = true
             winShortcut = true
