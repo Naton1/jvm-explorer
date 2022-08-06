@@ -12,7 +12,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -104,13 +103,6 @@ public class RunningJvmsController {
 		}, processes.getItems(), searchJvms.textProperty(), runningJvms));
 	}
 
-	private String getRunningJvmDisplay(int visibleProcesses, int totalProcesses) {
-		if (visibleProcesses == totalProcesses) {
-			return numberFormat.format(totalProcesses);
-		}
-		return numberFormat.format(visibleProcesses) + "/" + numberFormat.format(totalProcesses);
-	}
-
 	private void scheduleRunningJvmUpdater() {
 		executorService.scheduleAtFixedRate(() -> {
 			final List<RunningJvm> activeJvms = runningJvmLoader.list();
@@ -126,6 +118,13 @@ public class RunningJvmsController {
 				activeJvms.stream().filter(runningJvm -> !runningJvms.contains(runningJvm)).forEach(runningJvms::add);
 			});
 		}, 0, 1, TimeUnit.SECONDS);
+	}
+
+	private String getRunningJvmDisplay(int visibleProcesses, int totalProcesses) {
+		if (visibleProcesses == totalProcesses) {
+			return numberFormat.format(totalProcesses);
+		}
+		return numberFormat.format(visibleProcesses) + "/" + numberFormat.format(totalProcesses);
 	}
 
 }

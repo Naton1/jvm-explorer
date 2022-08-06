@@ -97,10 +97,6 @@ public class LoadedClassesController {
 		initialize();
 	}
 
-	public void select(TreeItem<ClassTreeNode> itemToSelect) {
-		classes.getSelectionModel().select(itemToSelect);
-	}
-
 	private void initialize() {
 		setupTreeSearching();
 		setupAgentLoader();
@@ -110,6 +106,12 @@ public class LoadedClassesController {
 	}
 
 	private void setupTreeSearching() {
+		searchClasses.textProperty().addListener((obs, old, newv) -> {
+			// TreeView is kinda buggy with selection when filtering and selects a ton of random stuff sometimes
+			// Haven't figured out specifically why/what it does, but since we do a lot on selecting a new class
+			// (load that class + decompile), it gets kinda laggy. Therefore, we remove the class on text change.
+			classes.getSelectionModel().clearSelection();
+		});
 		classesTreeRoot.predicateProperty().bind(Bindings.createObjectBinding(() -> {
 			final String text = searchClasses.getText().trim();
 			final Predicate<String> predicate = filterHelper.createStringPredicate(text);
@@ -135,6 +137,7 @@ public class LoadedClassesController {
 				               .findFirst()
 				               .ifPresent(selected -> {
 					               // reset first, or javafx breaks and selects the wrong thing
+					               // note we also reset the selected item on text change, but thats unrelated
 					               searchClasses.clear();
 					               log.debug("Quick-selected {}", selected);
 					               select(selected);
@@ -218,6 +221,10 @@ public class LoadedClassesController {
 		classes.setSkin(treeViewPlaceholderSkin);
 	}
 
+	public void select(TreeItem<ClassTreeNode> itemToSelect) {
+		classes.getSelectionModel().select(itemToSelect);
+	}
+
 	private String buildAgentArgs(RunningJvm runningJvm) {
 		return AgentConfiguration.builder()
 		                         .hostName("localhost")
@@ -247,7 +254,15 @@ public class LoadedClassesController {
 			final ClassContent classContent = clientHandler.getClassContent(selectedJvm, loadedClass);
 			log.debug("Received class content for {}", loadedClass);
 			if (classContent != null) {
-				Platform.runLater(() -> currentClass.set(classContent));
+				Platform.runLater(() -> {
+					final TreeItem<ClassTreeNode> selected = classes.getSelectionModel().getSelectedItem();
+					if (selected != newv) {
+						log.debug("Class changed from {}, ignoring load", loadedClass);
+						// Class changed already
+						return;
+					}
+					currentClass.set(classContent);
+				});
 			}
 		});
 	}
@@ -260,13 +275,6 @@ public class LoadedClassesController {
 		final long visibleItems = classesTreeRoot.streamVisible().filter(p -> p.getLoadedClass() != null).count();
 		final long sourceItems = classesTreeRoot.streamSource().filter(p -> p.getLoadedClass() != null).count();
 		return "Loaded Classes (" + getLoadedClassDisplay(visibleItems, sourceItems) + ")";
-	}
-
-	private String getLoadedClassDisplay(long visibleItems, long sourceItems) {
-		if (visibleItems == sourceItems) {
-			return numberFormat.format(visibleItems);
-		}
-		return numberFormat.format(visibleItems) + "/" + numberFormat.format(sourceItems);
 	}
 
 	private String getPlaceholderText() {
@@ -310,6 +318,13 @@ public class LoadedClassesController {
 			classesTreeRoot.getSourceChildren().setAll(root.getSourceChildren());
 			loadedClassProgressCount.set(CLASSES_NOT_LOADING);
 		});
+	}
+
+	private String getLoadedClassDisplay(long visibleItems, long sourceItems) {
+		if (visibleItems == sourceItems) {
+			return numberFormat.format(visibleItems);
+		}
+		return numberFormat.format(visibleItems) + "/" + numberFormat.format(sourceItems);
 	}
 
 	private ClassTreeNode buildClassTree(List<LoadedClass> loadedClasses) {

@@ -105,9 +105,129 @@ public class ModifyMethodController {
 		setupCodeArea();
 	}
 
+	private void setupCodeArea() {
+		final CodeAreaHelper codeAreaHelper = new CodeAreaHelper(executorService);
+
+		modifyType.getItems().setAll(ModifyType.values());
+		modifyType.getSelectionModel().selectFirst();
+
+		resetClassNode();
+
+		template = Bindings.createStringBinding(() -> buildBaseCode(method.getValue(), modifyType.getValue()),
+		                                        modifyType.valueProperty(),
+		                                        method.valueProperty());
+
+		final ChangeListener<String> bindingListener = (obs, old, newv) -> {
+			code.replaceText(newv);
+			codeAreaHelper.triggerHighlightUpdate(code);
+		};
+		template.addListener(bindingListener);
+		bindingListener.changed(template, null, template.getValue());
+
+		codeAreaHelper.initializeJavaEditor(code);
+		setupContextMenu();
+	}
+
+	private void resetClassNode() {
+		// We modify the ClassNode methods in-place after compiling.
+		// Therefore, if there is some failure, we need to reset the class node, so it doesn't stay corrupted.
+		classNode = AsmHelper.parse(classFile);
+		final List<MethodDescriptor> methods = classNode.methods.stream()
+		                                                        .filter(mn -> !Modifier.isAbstract(mn.access))
+		                                                        .map(MethodDescriptor::new)
+		                                                        .collect(Collectors.toList());
+		final int selectedIndex = method.getSelectionModel().getSelectedIndex();
+		method.getItems().setAll(methods);
+		if (selectedIndex == -1) {
+			// Initial setup
+			method.getSelectionModel().selectFirst();
+		}
+		else {
+			// Select same method as before, after resetting
+			method.getSelectionModel().select(selectedIndex);
+		}
+	}
+
+	private String buildBaseCode(MethodDescriptor methodDesc, ModifyType modifyType) {
+		if (methodDesc == null) {
+			// If all methods are abstract (interface), we may not be able to modify anything
+			return "// No method selected";
+		}
+		final String returnType =
+				modifyType.isExpectsReturnValue() ? Type.getReturnType(methodDesc.getMethodNode().desc).getClassName()
+				                                  : "void";
+		final String method = methodDesc.buildTemplate(METHOD_NAME, returnType);
+		final CodeTemplateHelper codeTemplateHelper = new CodeTemplateHelper();
+		final String code = modifyType.getComment();
+		return codeTemplateHelper.loadModifyMethod(CLASS_NAME, method, code);
+	}
+
+	private void setupContextMenu() {
+		final ContextMenu contextMenu = new ContextMenu();
+
+		final MenuItem compile = new MenuItem("Compile Code");
+		compile.setOnAction(e -> compileButton.fire());
+
+		final KeyCodeCombination compileShortcut = new KeyCodeCombination(KeyCode.B, KeyCodeCombination.CONTROL_DOWN);
+		compile.setAccelerator(compileShortcut);
+
+		AcceleratorHelper.process(code, compileShortcut, compile);
+
+		contextMenu.getItems().add(compile);
+
+		final MenuItem modifyCode = new MenuItem("Modify Code");
+		modifyCode.setOnAction(e -> modifyButton.fire());
+
+		final KeyCodeCombination modifyShortcut = new KeyCodeCombination(KeyCode.M, KeyCodeCombination.CONTROL_DOWN);
+		modifyCode.setAccelerator(modifyShortcut);
+
+		AcceleratorHelper.process(code, modifyShortcut, modifyCode);
+
+		contextMenu.getItems().add(modifyCode);
+
+		code.setContextMenu(contextMenu);
+	}
+
 	@FXML
 	void onCompile() {
 		onCompile(c -> Platform.runLater(() -> setOutputText("Compiled Successfully", c.getStdOut())));
+	}
+
+	private void onCompile(Consumer<CompileResult> onCompilation) {
+		setOutputText("Compiling...", "Please wait.");
+		// I love when java can't compile my lambda without casting
+		executorService.submit(() -> {
+			log.debug("Compiling class with {} classes on classpath", classpath.size());
+			final Compiler compiler = new Compiler();
+			final JavacBytecodeProvider javacBytecodeProvider = new RemoteJavacBytecodeProvider(clientHandler,
+			                                                                                    runningJvm,
+			                                                                                    classpath);
+			final int targetJavaVersion = Math.min(getJavaVersion(), Runtime.version().feature());
+			final CompileResult compileResult = compiler.compile(targetJavaVersion,
+			                                                     CLASS_NAME,
+			                                                     code.getText(),
+			                                                     javacBytecodeProvider);
+			log.debug("Compile result: {}", compileResult);
+			if (!compileResult.isSuccess()) {
+				Platform.runLater(() -> setOutputText("Compilation Failed", compileResult.getStdOut()));
+				return;
+			}
+			onCompilation.accept(compileResult);
+		});
+	}
+
+	private void setOutputText(String header, String body) {
+		output.setText(header + System.lineSeparator() + System.lineSeparator() + body);
+	}
+
+	private int getJavaVersion() {
+		try {
+			return runningJvm.getJavaVersion();
+		}
+		catch (AgentException e) {
+			log.warn("Failed to get java version for remote code execution", e);
+			return Runtime.version().feature();
+		}
 	}
 
 	@FXML
@@ -144,80 +264,6 @@ public class ModifyMethodController {
 			log.debug("Patched class successfully");
 			Platform.runLater(() -> onClose.accept(true));
 		});
-	}
-
-	@FXML
-	void onCancel() {
-		onClose.accept(false);
-	}
-
-	private void setupCodeArea() {
-		final CodeAreaHelper codeAreaHelper = new CodeAreaHelper(executorService);
-
-		modifyType.getItems().setAll(ModifyType.values());
-		modifyType.getSelectionModel().selectFirst();
-
-		resetClassNode();
-
-		template = Bindings.createStringBinding(() -> buildBaseCode(method.getValue(), modifyType.getValue()),
-		                                        modifyType.valueProperty(),
-		                                        method.valueProperty());
-
-		final ChangeListener<String> bindingListener = (obs, old, newv) -> {
-			code.replaceText(newv);
-			codeAreaHelper.triggerHighlightUpdate(code);
-		};
-		template.addListener(bindingListener);
-		bindingListener.changed(template, null, template.getValue());
-
-		codeAreaHelper.initializeJavaEditor(code);
-		setupContextMenu();
-	}
-
-	private void setupContextMenu() {
-		final ContextMenu contextMenu = new ContextMenu();
-
-		final MenuItem compile = new MenuItem("Compile Code");
-		compile.setOnAction(e -> compileButton.fire());
-
-		final KeyCodeCombination compileShortcut = new KeyCodeCombination(KeyCode.B, KeyCodeCombination.CONTROL_DOWN);
-		compile.setAccelerator(compileShortcut);
-
-		AcceleratorHelper.process(code, compileShortcut, compile);
-
-		contextMenu.getItems().add(compile);
-
-		final MenuItem modifyCode = new MenuItem("Modify Code");
-		modifyCode.setOnAction(e -> modifyButton.fire());
-
-		final KeyCodeCombination modifyShortcut = new KeyCodeCombination(KeyCode.M, KeyCodeCombination.CONTROL_DOWN);
-		modifyCode.setAccelerator(modifyShortcut);
-
-		AcceleratorHelper.process(code, modifyShortcut, modifyCode);
-
-		contextMenu.getItems().add(modifyCode);
-
-		code.setContextMenu(contextMenu);
-	}
-
-	private void resetClassNode() {
-		// We modify the ClassNode methods in-place after compiling.
-		// Therefore, if there is some failure, we need to reset the class node, so it doesn't stay corrupted.
-		classNode = AsmHelper.parse(classFile);
-		final List<MethodDescriptor> methods = classNode.methods.stream()
-		                                                        .filter(mn -> !Modifier.isAbstract(mn.access))
-		                                                        .map(MethodDescriptor::new)
-		                                                        .collect(Collectors.toList());
-		final int selectedIndex = method.getSelectionModel().getSelectedIndex();
-		method.getItems().setAll(methods);
-		if (selectedIndex == -1) {
-			// Initial setup
-			method.getSelectionModel().selectFirst();
-		}
-		else {
-			// Select same method as before, after resetting
-			method.getSelectionModel().select(selectedIndex);
-		}
 	}
 
 	private void postProcess(CompileResult compileResult, MethodDescriptor selectedMethod,
@@ -258,43 +304,6 @@ public class ModifyMethodController {
 		delegateCalls(classNode, methodToModify);
 	}
 
-	private void onCompile(Consumer<CompileResult> onCompilation) {
-		setOutputText("Compiling...", "Please wait.");
-		// I love when java can't compile my lambda without casting
-		executorService.submit(() -> {
-			log.debug("Compiling class with {} classes on classpath", classpath.size());
-			final Compiler compiler = new Compiler();
-			final JavacBytecodeProvider javacBytecodeProvider = new RemoteJavacBytecodeProvider(clientHandler,
-			                                                                                    runningJvm,
-			                                                                                    classpath);
-			final int targetJavaVersion = Math.min(getJavaVersion(), Runtime.version().feature());
-			final CompileResult compileResult = compiler.compile(targetJavaVersion,
-			                                                     CLASS_NAME,
-			                                                     code.getText(),
-			                                                     javacBytecodeProvider);
-			log.debug("Compile result: {}", compileResult);
-			if (!compileResult.isSuccess()) {
-				Platform.runLater(() -> setOutputText("Compilation Failed", compileResult.getStdOut()));
-				return;
-			}
-			onCompilation.accept(compileResult);
-		});
-	}
-
-	private String buildBaseCode(MethodDescriptor methodDesc, ModifyType modifyType) {
-		if (methodDesc == null) {
-			// If all methods are abstract (interface), we may not be able to modify anything
-			return "// No method selected";
-		}
-		final String returnType =
-				modifyType.isExpectsReturnValue() ? Type.getReturnType(methodDesc.getMethodNode().desc).getClassName()
-				                                  : "void";
-		final String method = methodDesc.buildTemplate(METHOD_NAME, returnType);
-		final CodeTemplateHelper codeTemplateHelper = new CodeTemplateHelper();
-		final String code = modifyType.getComment();
-		return codeTemplateHelper.loadModifyMethod(CLASS_NAME, method, code);
-	}
-
 	private void replaceReturn(MethodNode methodNodeToUpdate, Label goToLabel) {
 		final List<AbstractInsnNode> returns = new ArrayList<>();
 		for (AbstractInsnNode insn : methodNodeToUpdate.instructions) {
@@ -326,18 +335,9 @@ public class ModifyMethodController {
 		});
 	}
 
-	private int getJavaVersion() {
-		try {
-			return runningJvm.getJavaVersion();
-		}
-		catch (AgentException e) {
-			log.warn("Failed to get java version for remote code execution", e);
-			return Runtime.version().feature();
-		}
-	}
-
-	private void setOutputText(String header, String body) {
-		output.setText(header + System.lineSeparator() + System.lineSeparator() + body);
+	@FXML
+	void onCancel() {
+		onClose.accept(false);
 	}
 
 	@RequiredArgsConstructor
@@ -362,6 +362,12 @@ public class ModifyMethodController {
 	private static class MethodDescriptor {
 		private final MethodNode methodNode;
 
+		@Override
+		public String toString() {
+			final String returnType = Type.getReturnType(methodNode.desc).getClassName();
+			return buildTemplate(methodNode.name, returnType);
+		}
+
 		private String buildTemplate(String methodName, String returnType) {
 			final AtomicInteger paramIndex = new AtomicInteger(0);
 			if (!Modifier.isStatic(methodNode.access)) {
@@ -376,12 +382,6 @@ public class ModifyMethodController {
 			final boolean isStatic = Modifier.isStatic(methodNode.access);
 			final String methodPrefix = "public " + (isStatic ? "static " : "");
 			return methodPrefix + returnType + " " + methodName + "(" + arguments + ")";
-		}
-
-		@Override
-		public String toString() {
-			final String returnType = Type.getReturnType(methodNode.desc).getClassName();
-			return buildTemplate(methodNode.name, returnType);
 		}
 
 	}

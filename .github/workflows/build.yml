@@ -3,7 +3,14 @@ on: workflow_dispatch
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, mac-latest ]
+        java-version: [ 11, 17 ]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2.4.2
@@ -12,27 +19,28 @@ jobs:
         uses: actions/setup-java@v3.4.1
         with:
           distribution: adopt
-          java-version: 11
+          java-version: ${{ matrix.java-version }}
+
+      - name: Set Gradle Executable
+        shell: bash
+        run: chmod +x gradlew
 
       - name: Build
-        run: |
-          chmod +x gradlew
-          ./gradlew build
+        shell: bash
+        run: ./gradlew build
 
       - name: Extract Version
         id: extract_version
+        shell: bash
         run: |
-          chmod +x gradlew
           echo ::set-output name=version::$(./gradlew -q explorer:properties | grep ^version: | cut -d ' ' -f 2)
 
       - name: Run Integration Tests
         uses: GabrielBB/xvfb-action@v1.6
         with:
-          run: |
-            chmod +x gradlew
-            ./gradlew integrationTest
+          run: ./gradlew integrationTest
 
-      - name: Publish Test Results
+      - name: Publish Test Results ${{ matrix.os }} Java ${{ matrix.java-version }}
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: always()
         with:
@@ -41,11 +49,29 @@ jobs:
       - name: Run Headless Jar Health Test
         uses: GabrielBB/xvfb-action@v1.6
         with:
+          run: ./gradlew verifyJarStarts
+
+      - name: GitHub Release Installer
+        if: ${{ matrix.java-version }} == 17
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          files: explorer/build/jpackage/*
+          fail_on_unmatched_files: true
+
+      - name: Build Cross Platform Jar
+        if: ${{ matrix.java-version }} == 11 && ${{ matrix.os }} == ubuntu-latest
+        uses: GabrielBB/xvfb-action@v1.6
+        with:
           run: |
-            chmod +x gradlew
+            export FAT_JAR=true
+            ./gradlew clean
+            ./gradlew build
+            ./gradlew integrationTest
             ./gradlew verifyJarStarts
 
-      - name: GitHub Release
+      - name: GitHub Release Jar
+        if: ${{ matrix.java-version }} == 11 && ${{ matrix.os }} == ubuntu-latest
         uses: softprops/action-gh-release@v0.1.14
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}

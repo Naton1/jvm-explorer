@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.naton1"
-version = "0.5.0"
+version = "1.0.0"
 
 java.sourceCompatibility = JavaVersion.VERSION_1_7
 java.targetCompatibility = JavaVersion.VERSION_1_7

@@ -49,11 +49,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeCell<ClassTreeNode>> {
 
+	private static final Map<LoadedClass.MetaType, Image> CLASS_IMAGES = new ConcurrentHashMap<>();
 	private final PatchHelper patchHelper = new PatchHelper();
 	private final ClassTreeHelper classTreeHelper = new ClassTreeHelper();
 	private final FileHelper fileHelper = new FileHelper();
 	private final RemoteCodeHelper remoteCodeHelper = new RemoteCodeHelper();
-
 	private final ExecutorService executorService;
 	private final AlertHelper alertHelper;
 	private final ObjectProperty<RunningJvm> currentJvm;
@@ -84,47 +84,6 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 			}
 			return new ImageView(item.getType().getImage());
 		}, treeCell.itemProperty()));
-	}
-
-	private static final Map<LoadedClass.MetaType, Image> CLASS_IMAGES = new ConcurrentHashMap<>();
-
-	private Image getClassImage(LoadedClass loadedClass) {
-		if (loadedClass.getMetaType() == null) {
-			return ClassTreeNode.Type.CLASS.getImage();
-		}
-		return CLASS_IMAGES.computeIfAbsent(loadedClass.getMetaType(), type -> {
-			final String imagePath;
-			switch (type) {
-			case INNER:
-				imagePath = "icons/innerclass.png";
-				break;
-			case INTERFACE:
-				imagePath = "icons/interface.png";
-				break;
-			case ABSTRACT:
-				imagePath = "icons/abstractClass.png";
-				break;
-			case ENUM:
-				imagePath = "icons/enum.png";
-				break;
-			case ANNOTATION:
-				imagePath = "icons/annotationtype.png";
-				break;
-			case EXCEPTION:
-				imagePath = "icons/exceptionClass.png";
-				break;
-			case ABSTRACT_EXCEPTION:
-				imagePath = "icons/abstractException.png";
-				break;
-			case ANONYMOUS:
-				imagePath = "icons/anonymousClass.png";
-				break;
-			default:
-				log.warn("Unknown type: {}", type);
-				return ClassTreeNode.Type.CLASS.getImage();
-			}
-			return new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(imagePath)));
-		});
 	}
 
 	private void setupTextBinding(TreeCell<ClassTreeNode> treeCell) {
@@ -184,6 +143,45 @@ public class ClassCellFactory implements Callback<TreeView<ClassTreeNode>, TreeC
 		});
 
 		treeCell.setContextMenu(classesContextMenu);
+	}
+
+	private Image getClassImage(LoadedClass loadedClass) {
+		if (loadedClass.getMetaType() == null) {
+			return ClassTreeNode.Type.CLASS.getImage();
+		}
+		return CLASS_IMAGES.computeIfAbsent(loadedClass.getMetaType(), type -> {
+			final String imagePath;
+			switch (type) {
+			case INNER:
+				imagePath = "icons/innerclass.png";
+				break;
+			case INTERFACE:
+				imagePath = "icons/interface.png";
+				break;
+			case ABSTRACT:
+				imagePath = "icons/abstractClass.png";
+				break;
+			case ENUM:
+				imagePath = "icons/enum.png";
+				break;
+			case ANNOTATION:
+				imagePath = "icons/annotationtype.png";
+				break;
+			case EXCEPTION:
+				imagePath = "icons/exceptionClass.png";
+				break;
+			case ABSTRACT_EXCEPTION:
+				imagePath = "icons/abstractException.png";
+				break;
+			case ANONYMOUS:
+				imagePath = "icons/anonymousClass.png";
+				break;
+			default:
+				log.warn("Unknown type: {}", type);
+				return ClassTreeNode.Type.CLASS.getImage();
+			}
+			return new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(imagePath)));
+		});
 	}
 
 	private MenuItem createScopedExport(TreeCell<ClassTreeNode> treeCell, TreeView<ClassTreeNode> classes) {

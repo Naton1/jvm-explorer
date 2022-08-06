@@ -16,13 +16,6 @@ public class CodeTemplateHelper {
 		               .strip();
 	}
 
-	public String loadRemoteCallable(String packageName, String className) {
-		final String template = loadTemplate("remote-code-template.txt");
-		final String templateWithPackage = addPackage(template, packageName);
-		final String templateWithClass = addClassName(templateWithPackage, className);
-		return templateWithClass.strip();
-	}
-
 	private String loadTemplate(String path) {
 		try {
 			final byte[] templateBytes = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(path))
@@ -33,6 +26,13 @@ public class CodeTemplateHelper {
 			log.error("Failed to load template resource {}", path, e);
 			throw new IllegalStateException(e);
 		}
+	}
+
+	public String loadRemoteCallable(String packageName, String className) {
+		final String template = loadTemplate("remote-code-template.txt");
+		final String templateWithPackage = addPackage(template, packageName);
+		final String templateWithClass = addClassName(templateWithPackage, className);
+		return templateWithClass.strip();
 	}
 
 	private String addPackage(String template, String packageName) {

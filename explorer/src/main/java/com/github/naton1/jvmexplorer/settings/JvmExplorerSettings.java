@@ -58,20 +58,6 @@ public class JvmExplorerSettings {
 		}
 	}
 
-	public void save(File settingsFile) {
-		try {
-			final File parent = settingsFile.getParentFile();
-			if (parent != null) {
-				parent.mkdirs();
-			}
-			final String settingsFileContent = GSON.toJson(this);
-			Files.writeString(settingsFile.toPath(), settingsFileContent);
-		}
-		catch (Exception e) {
-			log.warn("Failed to save settings", e);
-		}
-	}
-
 	public boolean propertiesEquals(JvmExplorerSettings other) {
 		final List<Property<?>> ourProperties = properties();
 		final List<Property<?>> otherProperties = other.properties();
@@ -88,12 +74,26 @@ public class JvmExplorerSettings {
 		return true;
 	}
 
+	private List<Property<?>> properties() {
+		return List.of(x, y, width, height, maximized, firstDividerPosition, secondDividerPosition, showClassLoader);
+	}
+
 	public void configureAutoSaving(File settingsFile) {
 		properties().forEach(property -> property.addListener((obs, old, newv) -> save(settingsFile)));
 	}
 
-	private List<Property<?>> properties() {
-		return List.of(x, y, width, height, maximized, firstDividerPosition, secondDividerPosition, showClassLoader);
+	public void save(File settingsFile) {
+		try {
+			final File parent = settingsFile.getParentFile();
+			if (parent != null) {
+				parent.mkdirs();
+			}
+			final String settingsFileContent = GSON.toJson(this);
+			Files.writeString(settingsFile.toPath(), settingsFileContent);
+		}
+		catch (Exception e) {
+			log.warn("Failed to save settings", e);
+		}
 	}
 
 }

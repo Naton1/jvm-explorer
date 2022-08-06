@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.naton1"
-version = "0.8.0"
+version = "0.9.0"
 
 repositories {
     mavenCentral()
@@ -26,9 +26,9 @@ application {
 }
 
 val asmVersion = "9.3"
-val javaFxPlatform = JavaFXPlatform.detect(project).classifier
-print(javaFxPlatform)
 val javaFxVersion = "18.0.1"
+val javaFxPlatform = JavaFXPlatform.detect(project).classifier
+val isFatJar = "true" == System.getenv("FAT_JAR")
 
 dependencies {
     implementation(project(":protocol"))
@@ -41,24 +41,38 @@ dependencies {
     implementation("org.quiltmc:quiltflower:1.8.1")
     implementation("org.fxmisc.richtext:richtextfx:0.10.9")
     implementation("com.google.code.gson:gson:2.9.0")
-    implementation("org.hildan.fxgson:fx-gson:4.0.1")
+    implementation("org.hildan.fxgson:fx-gson:4.0.1") {
+        // This package includes all javafx dependencies for some reason...
+        exclude("org.openjfx")
+    }
 
     implementation("org.ow2.asm:asm:${asmVersion}")
     implementation("org.ow2.asm:asm-util:${asmVersion}")
 
     implementation("org.openjdk.asmtools:asmtools-core:7.0.b10-ea")
 
-    implementation("org.openjfx:javafx-base:${javaFxVersion}:${javaFxPlatform}")
-    implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javaFxPlatform}")
-    implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javaFxPlatform}")
-    implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javaFxPlatform}")
+    if (isFatJar) {
+        val platforms = listOf(JavaFXPlatform.LINUX, JavaFXPlatform.WINDOWS, JavaFXPlatform.OSX)
+                .map { it.classifier }
+        for (platform in platforms) {
+            implementation("org.openjfx:javafx-base:${javaFxVersion}:${platform}")
+            implementation("org.openjfx:javafx-controls:${javaFxVersion}:${platform}")
+            implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${platform}")
+            implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${platform}")
+        }
+    } else {
+        implementation("org.openjfx:javafx-base:${javaFxVersion}:${javaFxPlatform}")
+        implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javaFxPlatform}")
+        implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javaFxPlatform}")
+        implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javaFxPlatform}")
+    }
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")
     testImplementation("org.mockito:mockito-core:3.+")
     testImplementation("org.mockito:mockito-junit-jupiter:3.12.4")
 
-    // Allows screenshots
+    // Allow screenshots
     testImplementation("org.openjfx:javafx-swing:${javaFxVersion}:${javaFxPlatform}")
 }
 
@@ -161,11 +175,19 @@ tasks {
         mainClass = application.mainClass.get()
         javaOptions = listOf()
         destination = "$buildDir/jpackage"
+        type = org.panteleyev.jpackage.ImageType.APP_IMAGE
+        windows {
+            winDirChooser = true
+            winShortcut = true
+        }
+        linux {
+            linuxShortcut = true
+        }
     }
 }
 
 // Based on https://github.com/openjfx/javafx-gradle-plugin/blob/master/src/main/java/org/openjfx/gradle/JavaFXPlatform.java
-// but they don't support all os versions
+// but they don't support 32bit windows
 enum class JavaFXPlatform(val classifier: String, private val osDetectorClassifier: String) {
 
     LINUX("linux", "linux-x86_64"),

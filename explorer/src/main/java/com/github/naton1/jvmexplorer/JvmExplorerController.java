@@ -37,24 +37,20 @@ public class JvmExplorerController {
 	private final ScheduledExecutorService executorService =
 			new VerboseScheduledExecutorService(Executors.newScheduledThreadPool(
 			8));
-
-	private final ClientHandler clientHandler = ClientHandler.builder()
-	                                                         .onConnect(this::onConnect)
-	                                                         .onDisconnect(this::onDisconnect)
-	                                                         .build();
-
 	@FXML
 	private RunningJvmsController runningJvmsController;
 	@FXML
 	private LoadedClassesController loadedClassesController;
 	@FXML
 	private CurrentClassController currentClassController;
-
 	@FXML
 	private SplitPane splitPane;
-
 	private Stage stage;
 	private AlertHelper alertHelper;
+	private final ClientHandler clientHandler = ClientHandler.builder()
+	                                                         .onConnect(this::onConnect)
+	                                                         .onDisconnect(this::onDisconnect)
+	                                                         .build();
 	private JvmExplorerServer server;
 
 	public void initialize(Stage stage) {

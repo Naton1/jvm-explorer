@@ -23,18 +23,23 @@ public class RemoteJavacBytecodeProvider implements JavacBytecodeProvider {
 	@Override
 	public List<JavaFileObject> list(String packageName, boolean recurse) {
 		return classpath.stream()
-		                .filter(l -> {
-			                final String classPackageName = ClassNameHelper.getPackageName(l.getName());
-			                if (recurse && classPackageName.startsWith(packageName + ".")) {
-				                return true;
-			                }
-			                return classPackageName.equals(packageName);
-		                })
-		                .map(loadedClass -> new ProvidedJavaFileObject(loadedClass.getName(),
-		                                                               JavaFileObject.Kind.CLASS,
-		                                                               () -> clientHandler.getClassBytes(runningJvm,
-		                                                                                                 loadedClass)))
+		                .filter(l -> isClassInPackage(l, packageName, recurse))
+		                .map(this::getProvidedJavaFileObject)
 		                .collect(Collectors.toList());
+	}
+
+	private boolean isClassInPackage(LoadedClass loadedClass, String packageName, boolean recurse) {
+		final String classPackageName = ClassNameHelper.getPackageName(loadedClass.getName());
+		if (recurse && classPackageName.startsWith(packageName + ".")) {
+			return true;
+		}
+		return classPackageName.equals(packageName);
+	}
+
+	private ProvidedJavaFileObject getProvidedJavaFileObject(LoadedClass loadedClass) {
+		return new ProvidedJavaFileObject(loadedClass.getName(),
+		                                  JavaFileObject.Kind.CLASS,
+		                                  () -> clientHandler.getClassBytes(runningJvm, loadedClass));
 	}
 
 }

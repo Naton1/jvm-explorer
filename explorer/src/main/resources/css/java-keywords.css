@@ -54,6 +54,10 @@
     -fx-fill: #871094;
 }
 
+.fieldref {
+    -fx-fill: #871094;
+}
+
 .label {
     -fx-fill: #0033B3;
 }

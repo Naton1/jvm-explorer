@@ -98,6 +98,13 @@ public class ClassFieldCellFactory implements Callback<TreeView<ClassField>, Tre
 		cell.setContextMenu(rowContextMenu);
 	}
 
+	private void setupTextBinding(TreeCell<ClassField> treeCell) {
+		treeCell.textProperty()
+		        .bind(Bindings.when(treeCell.itemProperty().isNotNull())
+		                      .then(treeCell.itemProperty().asString())
+		                      .otherwise(""));
+	}
+
 	private void setupImageBinding(TreeCell<ClassField> treeCell) {
 		treeCell.graphicProperty().bind(Bindings.createObjectBinding(() -> {
 			final ClassField item = treeCell.getItem();
@@ -106,13 +113,6 @@ public class ClassFieldCellFactory implements Callback<TreeView<ClassField>, Tre
 			}
 			return new ImageView(getFieldType(item).getImage());
 		}, treeCell.itemProperty()));
-	}
-
-	private void setupTextBinding(TreeCell<ClassField> treeCell) {
-		treeCell.textProperty()
-		        .bind(Bindings.when(treeCell.itemProperty().isNotNull())
-		                      .then(treeCell.itemProperty().asString())
-		                      .otherwise(""));
 	}
 
 	private void setupTooltipBinding(TreeCell<ClassField> treeCell) {

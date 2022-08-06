@@ -1,83 +1,24 @@
 package com.github.naton1.jvmexplorer.helper;
 
-import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 public class HighlightHelper {
 
-	private static final String[] KEYWORDS = new String[] { "abstract",
-	                                                        "assert",
-	                                                        "boolean",
-	                                                        "break",
-	                                                        "byte",
-	                                                        "case",
-	                                                        "catch",
-	                                                        "char",
-	                                                        "class",
-	                                                        "const",
-	                                                        "continue",
-	                                                        "default",
-	                                                        "do",
-	                                                        "double",
-	                                                        "else",
-	                                                        "enum",
-	                                                        "extends",
-	                                                        "false",
-	                                                        "final",
-	                                                        "finally",
-	                                                        "float",
-	                                                        "for",
-	                                                        "goto",
-	                                                        "if",
-	                                                        "implements",
-	                                                        "import",
-	                                                        "instanceof",
-	                                                        "int",
-	                                                        "interface",
-	                                                        "long",
-	                                                        "native",
-	                                                        "new",
-	                                                        "package",
-	                                                        "private",
-	                                                        "protected",
-	                                                        "public",
-	                                                        "return",
-	                                                        "short",
-	                                                        "static",
-	                                                        "strictfp",
-	                                                        "super",
-	                                                        "switch",
-	                                                        "synchronized",
-	                                                        "this",
-	                                                        "throw",
-	                                                        "throws",
-	                                                        "transient",
-	                                                        "true",
-	                                                        "try",
-	                                                        "void",
-	                                                        "volatile",
-	                                                        "while", };
-
-	private static final HighlightContext DEFAULT_CONTEXT = of(getStaticPatterns());
+	private static final HighlightContext DEFAULT_CONTEXT =
+			HighlightPatterns.of(HighlightPatterns.getStaticPatterns());
 
 	public static StyleSpans<Collection<String>> computeHighlighting(String text) {
 		return computeHighlighting(text, DEFAULT_CONTEXT);
@@ -105,14 +46,14 @@ public class HighlightHelper {
 	// Some of this context is considering how the decompiler will decompile the code
 	public static HighlightContext createContextFor(ClassNode classNode) {
 
-		final String methods = createMethodPattern(classNode);
-		final String fields = createFieldPattern(classNode);
+		final String methods = HighlightPatterns.createMethodPattern(classNode);
+		final String fields = HighlightPatterns.createFieldPattern(classNode);
 
-		final Map<String, String> patterns = new LinkedHashMap<>(getStaticPatterns());
+		final Map<String, String> patterns = new LinkedHashMap<>(HighlightPatterns.getStaticPatterns());
 		patterns.put("method", methods);
 		patterns.put("field", fields);
 
-		final HighlightContext context = of(patterns);
+		final HighlightContext context = HighlightPatterns.of(patterns);
 		log.debug("Generated highlight pattern for {}: {}", classNode.name, context.getPattern().pattern());
 		return context;
 	}
@@ -121,75 +62,6 @@ public class HighlightHelper {
 	public static class HighlightContext {
 		private final Set<String> matchKeys;
 		private final Pattern pattern;
-	}
-
-	private static String createFieldPattern(ClassNode classNode) {
-		return classNode.fields.stream().map(fn -> {
-			final String modifiers = Pattern.quote(Modifier.toString(Modifier.fieldModifiers() & fn.access));
-			final String fieldType = getPatternForTypeDeclaration(Type.getType(fn.desc));
-			final String fieldName = fn.name;
-			final String fieldDefinitionHalf = Stream.of(modifiers, fieldType)
-			                                         .filter(s -> !s.isEmpty())
-			                                         .collect(Collectors.joining(" "));
-			return "(?<=" + fieldDefinitionHalf + " )" + Pattern.quote(fieldName);
-		}).collect(Collectors.joining("|"));
-	}
-
-	private static String createMethodPattern(ClassNode classNode) {
-		return classNode.methods.stream().map(mn -> {
-			final String modifiers = Pattern.quote(Modifier.toString(Modifier.methodModifiers() & mn.access));
-			final String returnType = getPatternForTypeDeclaration(Type.getReturnType(mn.desc));
-			String methodName = mn.name;
-			final List<String> parts = new ArrayList<>();
-			parts.add(modifiers);
-			if (methodName.equals("<init>")) {
-				methodName = ClassNameHelper.getSimpleName(classNode.name.replace('/', '.'));
-			}
-			else {
-				parts.add(returnType);
-			}
-			final String methodDefinitionHalf = String.join(" ", parts);
-			return "(?<=" + methodDefinitionHalf + " )" + Pattern.quote(methodName) + "(?=\\()";
-		}).collect(Collectors.joining("|"));
-	}
-
-	// Field type, method return type
-	private static String getPatternForTypeDeclaration(Type type) {
-		String fieldType = ClassNameHelper.getSimpleName(type.getClassName());
-		if (fieldType.contains("$")) {
-			// Handle inner classes
-			fieldType = fieldType.substring(fieldType.lastIndexOf("$") + 1);
-		}
-		// We could also handle generics by checking the signature
-		return Pattern.quote(fieldType);
-	}
-
-	private static HighlightContext of(Map<String, String> patterns) {
-		final Pattern pattern = compilePattern(patterns);
-		return new HighlightContext(Set.copyOf(patterns.keySet()), pattern);
-	}
-
-	private static Pattern compilePattern(Map<String, String> patternMap) {
-		return Pattern.compile(patternMap.entrySet()
-		                                 .stream()
-		                                 .map(e -> "(?<" + e.getKey() + ">" + e.getValue() + ")")
-		                                 .collect(Collectors.joining("|")));
-	}
-
-	private static Map<String, String> getStaticPatterns() {
-		final Map<String, String> patternMap = new LinkedHashMap<>();
-		patternMap.put("keyword", "\\b(" + String.join("|", KEYWORDS) + ")\\b");
-		patternMap.put("paren", "[()]");
-		patternMap.put("brace", "[{}]");
-		patternMap.put("bracket", "[\\[\\]]");
-		patternMap.put("semicolon", ";");
-		patternMap.put("string", "\"([^\"\\\\]|\\\\.)*\"");
-		patternMap.put("comment", "//[^\n]*" + "|" + "/\\*(.|\\R)*?\\*/");
-		patternMap.put("annotation", "@[a-zA-Z\\d\\.]+");
-		patternMap.put("number", "(?<=[^\\w$])\\d+");
-		patternMap.put("label", "L\\d+"); // bytecode label
-		patternMap.put("char", "'.+?'");
-		return patternMap;
 	}
 
 }

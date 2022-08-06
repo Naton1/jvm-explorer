@@ -17,22 +17,6 @@ public class RunningJvm {
 	private final String id;
 	private final String name;
 
-	public Properties getSystemProperties() throws AgentException {
-		try {
-			final VirtualMachine vm = VirtualMachine.attach(id);
-			try {
-				return vm.getSystemProperties();
-			}
-			finally {
-				vm.detach();
-			}
-		}
-		catch (AttachNotSupportedException | IOException e) {
-			log.debug("Failed to load system properties", e);
-			throw new AgentException(e.getMessage(), e);
-		}
-	}
-
 	public int getJavaVersion() throws AgentException {
 		try {
 			String version = getSystemProperties().getProperty("java.version");
@@ -53,6 +37,22 @@ public class RunningJvm {
 		catch (AgentException e) {
 			log.warn("Failed to get java version for remote code execution", e);
 			throw e;
+		}
+	}
+
+	public Properties getSystemProperties() throws AgentException {
+		try {
+			final VirtualMachine vm = VirtualMachine.attach(id);
+			try {
+				return vm.getSystemProperties();
+			}
+			finally {
+				vm.detach();
+			}
+		}
+		catch (AttachNotSupportedException | IOException e) {
+			log.debug("Failed to load system properties", e);
+			throw new AgentException(e.getMessage(), e);
 		}
 	}
 

@@ -125,7 +125,7 @@ public class VerboseScheduledExecutorService implements ScheduledExecutorService
 				// tries to do some stuff off the JavaFX thread
 				final StackTraceElement[] stackTrace = throwable.getStackTrace();
 				if (stackTrace != null && stackTrace.length >= 2 && stackTrace[1].getClassName()
-				                                                                .equals("javafx.concurrent.Task")
+				                                                                 .equals("javafx.concurrent.Task")
 				    && stackTrace[1].getMethodName().equals("addEventHandler")) {
 					// Return, don't print or anything. We (unfortunately) know this happens.
 					return;
