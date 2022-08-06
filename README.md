@@ -74,6 +74,8 @@ Notes:
 <details>
   <summary>Modify Method</summary>
 
+<br/>
+
 Notes:
 
 * You can modify the method or replace the entire method body
@@ -85,6 +87,8 @@ Notes:
 
 <details>
   <summary>Modify Class</summary>
+
+<br/>
 
 Notes:
 
@@ -99,6 +103,8 @@ Notes:
 
 <details>
   <summary>Modify Bytecode</summary>
+
+<br/>
 
 Notes:
 
