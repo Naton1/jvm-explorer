@@ -69,7 +69,7 @@ jobs:
         uses: GabrielBB/xvfb-action@v1.6
         with:
           # put all in one line so the env var stays for all tasks
-          run: export FAT_JAR=true ./gradlew clean --info ./gradlew build --info ./gradlew integrationTest --info ./gradlew verifyJarStarts --info
+          run: export FAT_JAR=true && ./gradlew clean --info && ./gradlew build --info && ./gradlew integrationTest --info && ./gradlew verifyJarStarts --info
 
       - name: GitHub Release Jar
         if: matrix.java-version == 11 && matrix.os == 'ubuntu-latest'
