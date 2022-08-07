@@ -7,6 +7,7 @@ import javafx.scene.image.Image;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
@@ -122,14 +123,23 @@ public class ClassTreeNode implements Comparable<ClassTreeNode> {
 		}
 	}
 
+	@RequiredArgsConstructor
 	public enum Type {
 		CLASSLOADER("icons/classloader.png"), PACKAGE("icons/package.png"), CLASS("icons/class.png"),
 		;
-		@Getter
-		private final Image image;
+		private final String imagePath;
+		private volatile Image image;
 
-		Type(String imagePath) {
-			image = new Image(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(imagePath)));
+		public Image getImage() {
+			if (image == null) {
+				synchronized (this) {
+					if (image == null) {
+						image = new Image(Objects.requireNonNull(getClass().getClassLoader()
+						                                                   .getResourceAsStream(imagePath)));
+					}
+				}
+			}
+			return image;
 		}
 	}
 
