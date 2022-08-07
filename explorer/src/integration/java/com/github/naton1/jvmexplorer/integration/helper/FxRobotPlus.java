@@ -43,6 +43,7 @@ public class FxRobotPlus extends FxRobot {
 	}
 
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
+		waitUntil(() -> !treeView.lookupAll(".cell").isEmpty(), 5000);
 		interact(() -> {
 			final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
 			final TreeCell<T> treeCell = treeView.lookupAll(".cell")
