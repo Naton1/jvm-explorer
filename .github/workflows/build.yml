@@ -89,5 +89,11 @@ jobs:
         uses: softprops/action-gh-release@v0.1.14
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}
-          files: explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-*.jar
+          files: |
+            explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-windows-x86_64.jar
+            explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-windows-x86_32.jar
+            explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-linux-x86_64.jar
+            explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-linux-aarch_64.jar
+            explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-osx-x86_64.jar
+            explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-osx-aarch_64.jar
           fail_on_unmatched_files: true

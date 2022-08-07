@@ -131,9 +131,9 @@ The platform-specific installers currently support Windows, Linux, and Mac with 
 
 ### Run JAR:
 
-The provided JAR currently supports Windows, Linux, and Mac with Intel 64-bit arch.
+A platform-specific JAR is provided for each OS/arch combinations
 
-1) Download the jvm-explorer JAR file from [the latest release](https://github.com/naton1/jvm-explorer/releases/latest)
+1) Download a jvm-explorer.jar file for your OS/arch from [the latest release](https://github.com/naton1/jvm-explorer/releases/latest) - the file name includes the OS/arch
 2) Run with at least Java 11
 
 ### Build And Run:
