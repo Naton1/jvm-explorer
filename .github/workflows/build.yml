@@ -64,20 +64,30 @@ jobs:
           files: explorer/build/jpackage/*
           fail_on_unmatched_files: true
 
-      - name: Build Cross Platform Jar
+      - name: Build Platform-Specific Jars
         if: matrix.java-version == 11 && matrix.os == 'windows-latest'
         shell: bash
         run: |
-          export FAT_JAR=true
+          export PLATFORM_OVERRIDE=windows-x86_64
           ./gradlew clean --info
           ./gradlew build --info
           ./gradlew integrationTest --info
           ./gradlew verifyJarStarts --info
+          export PLATFORM_OVERRIDE=windows-x86_32
+          ./gradlew build --info
+          export PLATFORM_OVERRIDE=linux-x86_64
+          ./gradlew build --info
+          export PLATFORM_OVERRIDE=linux-aarch_64
+          ./gradlew build --info
+          export PLATFORM_OVERRIDE=osx-x86_64
+          ./gradlew build --info
+          export PLATFORM_OVERRIDE=osx-aarch_64
+          ./gradlew build --info
 
       - name: GitHub Release Jar
         if: matrix.java-version == 11 && matrix.os == 'windows-latest'
         uses: softprops/action-gh-release@v0.1.14
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}
-          files: explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}.jar
+          files: explorer/build/libs/jvm-explorer-${{ steps.extract_version.outputs.version }}-*.jar
           fail_on_unmatched_files: true

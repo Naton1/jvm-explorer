@@ -27,8 +27,8 @@ application {
 
 val asmVersion = "9.3"
 val javaFxVersion = "18.0.1"
-val javaFxPlatform = JavaFXPlatform.detect(project).classifier
-val isFatJar = "true" == System.getenv("FAT_JAR")
+val platformOverride = System.getenv("PLATFORM_OVERRIDE")
+val javaFxPlatform = if (platformOverride != null) JavaFXPlatform.detect(platformOverride).classifier else JavaFXPlatform.detect(project).classifier
 
 dependencies {
     implementation(project(":protocol"))
@@ -51,21 +51,10 @@ dependencies {
 
     implementation("org.openjdk.asmtools:asmtools-core:7.0.b10-ea")
 
-    if (isFatJar) {
-        val platforms = listOf(JavaFXPlatform.LINUX, JavaFXPlatform.WINDOWS, JavaFXPlatform.OSX)
-                .map { it.classifier }
-        for (platform in platforms) {
-            implementation("org.openjfx:javafx-base:${javaFxVersion}:${platform}")
-            implementation("org.openjfx:javafx-controls:${javaFxVersion}:${platform}")
-            implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${platform}")
-            implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${platform}")
-        }
-    } else {
-        implementation("org.openjfx:javafx-base:${javaFxVersion}:${javaFxPlatform}")
-        implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javaFxPlatform}")
-        implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javaFxPlatform}")
-        implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javaFxPlatform}")
-    }
+    implementation("org.openjfx:javafx-base:${javaFxVersion}:${javaFxPlatform}")
+    implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javaFxPlatform}")
+    implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javaFxPlatform}")
+    implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javaFxPlatform}")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")
@@ -123,6 +112,9 @@ tasks {
             else zipTree(it)
         })
         archiveBaseName.set("jvm-explorer")
+        if (platformOverride != null) {
+            archiveBaseName.set("${archiveBaseName.get()}-${platformOverride}")
+        }
     }
     processResources {
         dependsOn(":agent:jar")
@@ -202,14 +194,18 @@ enum class JavaFXPlatform(val classifier: String, private val osDetectorClassifi
     ;
 
     companion object {
-        fun detect(project: Project): JavaFXPlatform {
-            val osClassifier: String = project.extensions.getByType(com.google.gradle.osdetector.OsDetector::class.java).getClassifier()
+        fun detect(osClassifier: String): JavaFXPlatform {
             for (platform: JavaFXPlatform in values()) {
                 if (platform.osDetectorClassifier == osClassifier) {
                     return platform
                 }
             }
             throw GradleException("Unsupported JavaFX platform found: $osClassifier")
+        }
+
+        fun detect(project: Project): JavaFXPlatform {
+            val osClassifier: String = project.extensions.getByType(com.google.gradle.osdetector.OsDetector::class.java).getClassifier()
+            return detect(osClassifier)
         }
     }
 
