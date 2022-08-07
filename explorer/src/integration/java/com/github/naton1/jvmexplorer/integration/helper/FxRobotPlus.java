@@ -24,6 +24,7 @@ public class FxRobotPlus extends FxRobot {
 	private final FxRobot fxRobot;
 
 	public <T> void selectContextMenu(ListView<T> listView, Predicate<T> cellSelector, String action) {
+		waitUntil(() -> !listView.lookupAll(".cell").isEmpty(), 5000);
 		interact(() -> {
 			final ListCell<T> listCell = listView.lookupAll(".cell")
 			                                     .stream()
