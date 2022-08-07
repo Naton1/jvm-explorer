@@ -113,7 +113,7 @@ tasks {
         })
         archiveBaseName.set("jvm-explorer")
         if (platformOverride != null) {
-            archiveBaseName.set("${archiveBaseName.get()}-${platformOverride}")
+            archiveClassifier.set(platformOverride)
         }
     }
     processResources {

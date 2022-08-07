@@ -26,7 +26,7 @@ class LaunchJarTest extends EndToEndTest {
 
 		final RunningJvmLoader runningJvmLoader = new RunningJvmLoader();
 		final List<RunningJvm> initialJvms = runningJvmLoader.list();
-		fxRobotPlus.selectContextMenu(listView, Objects::isNull, "Launch JAR");
+		fxRobotPlus.selectContextMenu(listView, t -> true, "Launch JAR");
 
 		final RunningJvm loadedProgram = fxRobotPlus.waitFor(() -> runningJvmLoader.list()
 		                                                                           .stream()

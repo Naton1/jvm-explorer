@@ -44,7 +44,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always()
         with:
-          files: "**/test-results/**/*.xml"
+          junit_files: "**/test-results/**/*.xml"
 
       - name: Run Headless Jar Health Test
         uses: GabrielBB/xvfb-action@v1.6
