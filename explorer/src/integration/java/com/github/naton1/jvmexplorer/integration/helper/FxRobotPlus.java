@@ -54,16 +54,12 @@ public class FxRobotPlus extends FxRobot {
 
 	public <T> void selectContextMenu(ListView<T> listView, Predicate<T> cellSelector, String action) {
 		waitUntil(() -> {
-			final ListCell<T> listCell = listView.lookupAll(".cell")
-			                                     .stream()
-			                                     .map(n -> (ListCell<T>) n)
-			                                     .filter(cell -> cellSelector.test(cell.getItem()))
-			                                     .findFirst()
-			                                     .orElseThrow();
-			final MenuItem menuItem = listCell.getContextMenu()
-			                                  .getItems()
+			final MenuItem menuItem = listView.lookupAll(".cell")
 			                                  .stream()
-			                                  .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			                                  .map(n -> (ListCell<T>) n)
+			                                  .filter(cell -> cellSelector.test(cell.getItem()))
+			                                  .map(cell -> getMenuItem(cell.getContextMenu(), action))
+			                                  .filter(Objects::nonNull)
 			                                  .findFirst()
 			                                  .orElseThrow();
 			fire(menuItem);
