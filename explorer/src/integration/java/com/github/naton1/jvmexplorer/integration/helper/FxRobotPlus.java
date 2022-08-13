@@ -168,7 +168,7 @@ public class FxRobotPlus extends FxRobot {
 				return true;
 			}
 			catch (Exception e) {
-				log.debug("Test attempt failed with {}", e.getClass() + ": " + e.getMessage());
+				log.debug("Test attempt failed with {}", e.getClass().getName() + ": " + e.getMessage());
 				return false;
 			}
 		}, timeoutMs);
