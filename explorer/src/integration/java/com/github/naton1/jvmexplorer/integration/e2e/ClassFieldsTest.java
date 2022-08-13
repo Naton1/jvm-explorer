@@ -65,6 +65,7 @@ class ClassFieldsTest extends EndToEndTest {
 			appHelper.selectJvm(testJvm);
 			appHelper.selectMainClass(testJvm);
 			appHelper.openTab(2);
+			appHelper.waitUntilDisassemble(); // not directly related, but means fields are loaded too
 			final TreeView<?> fieldTree = appHelper.getFieldTree();
 			fxRobot.interact(() -> fieldTree.getSelectionModel().selectFirst());
 			final AtomicBoolean success = new AtomicBoolean(false);

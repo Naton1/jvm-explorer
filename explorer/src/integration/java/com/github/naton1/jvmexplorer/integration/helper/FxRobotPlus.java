@@ -16,6 +16,7 @@ import lombok.experimental.Delegate;
 import org.testfx.api.FxRobot;
 
 import java.util.ArrayDeque;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
@@ -72,23 +73,27 @@ public class FxRobotPlus extends FxRobot {
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
 		waitUntil(() -> {
 			final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
-			final TreeCell<T> treeCell = treeView.lookupAll(".cell")
-			                                     .stream()
-			                                     .map(n -> (TreeCell<T>) n)
-			                                     .filter(c -> c.getContextMenu() != null
-			                                                  && c.getContextMenu().getItems().size() > 0)
-			                                     .filter(cell -> selected == null || selected.getValue()
-			                                                                                 .equals(cell.getItem()))
-			                                     .findFirst()
-			                                     .orElseThrow();
-			final MenuItem menuItem = treeCell.getContextMenu()
-			                                  .getItems()
+			final MenuItem menuItem = treeView.lookupAll(".cell")
 			                                  .stream()
-			                                  .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			                                  .map(n -> (TreeCell<T>) n)
+			                                  .filter(c -> c.getContextMenu() != null
+			                                               && c.getContextMenu().getItems().size() > 0)
+			                                  .filter(cell -> selected == null || selected.getValue()
+			                                                                              .equals(cell.getItem()))
+			                                  .map(treeCell -> getMenuItem(treeCell.getContextMenu(), action))
+			                                  .filter(Objects::nonNull)
 			                                  .findFirst()
 			                                  .orElseThrow();
 			fire(menuItem);
 		}, 5000);
+	}
+
+	private MenuItem getMenuItem(ContextMenu contextMenu, String action) {
+		return contextMenu.getItems()
+		                  .stream()
+		                  .filter(m -> m.getText() != null && m.getText().startsWith(action))
+		                  .findFirst()
+		                  .orElse(null);
 	}
 
 	private void fire(MenuItem menuItem) {
@@ -179,10 +184,10 @@ public class FxRobotPlus extends FxRobot {
 	public <T> void selectComboBox(ComboBox<T> comboBox, String text) {
 		waitUntil(() -> {
 			final T comboBoxItem = comboBox.getItems()
-					.stream()
-					.filter(item -> item.toString().contains(text))
-					.findFirst()
-					.orElseThrow();
+			                               .stream()
+			                               .filter(item -> item.toString().contains(text))
+			                               .findFirst()
+			                               .orElseThrow();
 			comboBox.getSelectionModel().select(comboBoxItem);
 		}, 5000);
 	}
