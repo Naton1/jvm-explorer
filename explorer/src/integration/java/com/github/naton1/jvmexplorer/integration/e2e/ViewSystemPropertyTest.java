@@ -1,6 +1,5 @@
 package com.github.naton1.jvmexplorer.integration.e2e;
 
-import com.github.naton1.jvmexplorer.agent.RunningJvm;
 import com.github.naton1.jvmexplorer.integration.helper.FxRobotPlus;
 import com.github.naton1.jvmexplorer.integration.helper.TestJvm;
 import com.github.naton1.jvmexplorer.integration.programs.SleepForeverProgram;
@@ -17,10 +16,8 @@ class ViewSystemPropertyTest extends EndToEndTest {
 	void testShowSystemProperties(FxRobot fxRobot) throws Exception {
 		final FxRobotPlus fxRobotPlus = new FxRobotPlus(fxRobot);
 		try (final TestJvm testJvm = TestJvm.of(SleepForeverProgram.class)) {
-			final ListView<RunningJvm> jvms = fxRobot.lookup("#processes").queryListView();
-			fxRobotPlus.selectContextMenu(jvms,
-			                              item -> item != null && item.getId().equals(testJvm.getProcess().pid() + ""),
-			                              "View System Properties");
+			appHelper.selectJvm(testJvm);
+			appHelper.selectJvmAction("View System Properties");
 			fxRobotPlus.waitForStageExists("JVM System Properties");
 			final ListView<String> properties = findPropertiesListView(fxRobotPlus);
 			log.debug("Found {} system properties in {}", properties.getItems().size(), testJvm.getProcess().pid());

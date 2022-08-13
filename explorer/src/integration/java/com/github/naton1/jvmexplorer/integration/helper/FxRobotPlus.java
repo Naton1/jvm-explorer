@@ -13,6 +13,7 @@ import javafx.scene.control.TreeView;
 import javafx.stage.Stage;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
+import lombok.extern.slf4j.Slf4j;
 import org.testfx.api.FxRobot;
 
 import java.util.ArrayDeque;
@@ -24,6 +25,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 @RequiredArgsConstructor
+@Slf4j
 public class FxRobotPlus extends FxRobot {
 
 	@Delegate
@@ -53,6 +55,7 @@ public class FxRobotPlus extends FxRobot {
 	}
 
 	public <T> void selectContextMenu(ListView<T> listView, Predicate<T> cellSelector, String action) {
+		log.debug("Selecting context menu item with {} in {}", action, listView);
 		waitUntil(() -> {
 			final MenuItem menuItem = listView.lookupAll(".cell")
 			                                  .stream()
@@ -67,6 +70,10 @@ public class FxRobotPlus extends FxRobot {
 	}
 
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
+		log.debug("Selecting context menu item with {} in {} (selectedItem={})",
+		          action,
+		          treeView,
+		          treeView.getSelectionModel().getSelectedItem());
 		waitUntil(() -> {
 			final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
 			final MenuItem menuItem = treeView.lookupAll(".cell")
@@ -152,6 +159,7 @@ public class FxRobotPlus extends FxRobot {
 				return true;
 			}
 			catch (Exception e) {
+				log.debug("Test attempt failed with {}", e.getClass() + ": " + e.getMessage());
 				return false;
 			}
 		}, timeoutMs);

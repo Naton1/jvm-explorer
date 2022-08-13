@@ -35,6 +35,12 @@ public class AppHelper {
 		fxRobot.waitUntil(() -> fxRobot.select(getJvmList(), jvmName), 5000);
 	}
 
+	public void selectJvmAction(String action) {
+		final ListView<?> jvms = getJvmList();
+		final Object selectedItem = jvms.getSelectionModel().getSelectedItem();
+		fxRobot.selectContextMenu(jvms, item -> selectedItem == null || item == selectedItem, action);
+	}
+
 	public TreeView<?> getClassTree() {
 		return fxRobot.lookup("#classes").queryAs(TreeView.class);
 	}
