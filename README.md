@@ -44,6 +44,10 @@ Notes:
 
 <br/>
 
+Notes:
+
+* You can call methods in the remote classes - the loaded classes are used for the compiler classpath
+
 ![Execute Code Example](assets/execute-code.gif)
 </details>
 
@@ -78,9 +82,11 @@ Notes:
 
 Notes:
 
-* You can modify the method or replace the entire method body
+* You can insert code to the beginning of a method or replace the entire method body
 * The compiler currently uses the loaded classes as the classpath, so if a parameter type or return type isn't loaded,
-  it may fail
+  it may fail (you can replace the type with Object to make it compile if you don't need that type)
+* To access fields in the class, add a field with the same name and type in the class to compile - the reference will
+  automatically be replaced
 
 ![Modify Method Example](assets/modify-method.gif)
 </details>
@@ -95,8 +101,7 @@ Notes:
 * Ctrl+S to re-recompile and patch class (or Right-Click -> Save Changes)
 * Often, decompiled code is not valid Java code, so it may not compile in some cases - the modify method feature is the
   workaround for this
-* The compiler currently uses the loaded classes as the classpath, so if a parameter type or return type isn't loaded,
-  it may fail
+* The compiler currently uses the loaded classes as the classpath, so if some required type isn't loaded, it may fail
 
 ![Modify Class Example](assets/modify-class.gif)
 </details>
@@ -118,11 +123,11 @@ Notes:
 ## Getting Started
 
 There are three ways to run the application. Execute a provided platform-specific installer, a provided JAR file, or
-build and run it yourself. This application is intended to run on Java 11+ and can attach to JVMs running Java 7+.
+build and run it yourself. This application is intended to run on **Java 11+** and can attach to JVMs running Java 7+.
 
 ### Run Installer:
 
-The platform-specific installers currently support Windows, Linux, and Mac with Intel 64-bit arch.
+The platform-specific installers currently support Windows, Linux, and Mac with Intel 64-bit arch
 
 1) Download a platform-specific installer (look at file extension)
    from [the latest release](https://github.com/naton1/jvm-explorer/releases/latest)
@@ -133,8 +138,9 @@ The platform-specific installers currently support Windows, Linux, and Mac with 
 
 A platform-specific JAR is provided for each OS/arch combinations
 
-1) Download a jvm-explorer.jar file for your OS/arch from [the latest release](https://github.com/naton1/jvm-explorer/releases/latest) - the file name includes the OS/arch
-2) Run with at least Java 11
+1) Download a jvm-explorer.jar file for your OS/arch (look at file name)
+   from [the latest release](https://github.com/naton1/jvm-explorer/releases/latest)
+2) Run the JAR (Java 11+)
 
 ### Build And Run:
 
@@ -148,7 +154,7 @@ This approach will work on all platforms and architectures.
 
 `cd jvm-explorer`
 
-3) Run with Gradle
+3) Run with Gradle (Java 11+)
 
 `./gradlew run`
 
@@ -156,7 +162,7 @@ This approach will work on all platforms and architectures.
 
 Two logs files `application.log` and `agent.log` are created at `[User Home]/jvm-explorer/logs`
 
-* Must run the JAR with a Java version of at least Java 11
+* Must run the application with a Java version of at least Java 11
 * Must attach to a JVM running a Java version of at least Java 7
 * Must attach to a JVM running the same architecture - a 32-bit JVM must attach to a 32-bit JVM
 * May have to attach to a JVM that the same user started

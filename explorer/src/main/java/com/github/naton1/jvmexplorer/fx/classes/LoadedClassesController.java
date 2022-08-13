@@ -35,9 +35,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.io.UncheckedIOException;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class LoadedClassesController {
@@ -137,7 +140,7 @@ public class LoadedClassesController {
 				               .findFirst()
 				               .ifPresent(selected -> {
 					               // reset first, or javafx breaks and selects the wrong thing
-					               // note we also reset the selected item on text change, but thats unrelated
+					               // note we also reset the selected item on text change, but that's unrelated
 					               searchClasses.clear();
 					               log.debug("Quick-selected {}", selected);
 					               select(selected);
@@ -165,10 +168,7 @@ public class LoadedClassesController {
 						newv.loadAgent(localPath, agentArgs);
 					}
 					catch (AgentException | UncheckedIOException e) {
-						Platform.runLater(() -> {
-							alertHelper.showError("Agent Error", "Failed to load agent in JVM", e);
-							currentJvm.set(null);
-						});
+						onAttachFail(newv, e);
 					}
 					finally {
 						Platform.runLater(() -> agentLoading.set(false));
@@ -178,6 +178,30 @@ public class LoadedClassesController {
 			if (old != null) {
 				executorService.submit(() -> clientHandler.close(old));
 			}
+		});
+	}
+
+	private void onAttachFail(RunningJvm targetJvm, Exception e) {
+		final List<String> propertyList = new ArrayList<>();
+		try {
+			final Properties properties = targetJvm.getSystemProperties();
+			final List<String> propertiesToAdd = properties.entrySet()
+			                                               .stream()
+			                                               .map(entry -> entry.getKey() + ": " + entry.getValue())
+			                                               .collect(Collectors.toList());
+			propertyList.addAll(propertiesToAdd);
+		}
+		catch (Exception e2) {
+			log.debug("Failed to get properties for JVM {}", targetJvm, e2);
+		}
+		Platform.runLater(() -> {
+			if (propertyList.isEmpty()) {
+				alertHelper.showError("Agent Error", "Failed to load agent in JVM", e);
+			}
+			else {
+				alertHelper.showError("Agent Error", "Failed to load agent in JVM", e, propertyList);
+			}
+			currentJvm.set(null);
 		});
 	}
 

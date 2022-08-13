@@ -1,7 +1,12 @@
 package com.github.naton1.jvmexplorer.integration.helper;
 
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Control;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -23,43 +28,76 @@ public class FxRobotPlus extends FxRobot {
 	@Delegate
 	private final FxRobot fxRobot;
 
+	public void selectContextMenu(ContextMenu contextMenu, String action) {
+		waitUntil(() -> {
+			final MenuItem menuItem = contextMenu.getItems()
+			                                     .stream()
+			                                     .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			                                     .findFirst()
+			                                     .orElseThrow();
+			fire(menuItem);
+		}, 5000);
+	}
+
+	public void selectContextMenu(Control control, String action) {
+		waitUntil(() -> {
+			final MenuItem menuItem = control.getContextMenu()
+			                                 .getItems()
+			                                 .stream()
+			                                 .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			                                 .findFirst()
+			                                 .orElseThrow();
+			fire(menuItem);
+		}, 5000);
+	}
+
 	public <T> void selectContextMenu(ListView<T> listView, Predicate<T> cellSelector, String action) {
-		waitUntil(() -> !listView.lookupAll(".cell").isEmpty(), 5000);
-		interact(() -> {
+		waitUntil(() -> {
 			final ListCell<T> listCell = listView.lookupAll(".cell")
 			                                     .stream()
 			                                     .map(n -> (ListCell<T>) n)
 			                                     .filter(cell -> cellSelector.test(cell.getItem()))
 			                                     .findFirst()
 			                                     .orElseThrow();
-			listCell.getContextMenu()
-			        .getItems()
-			        .stream()
-			        .filter(m -> m.getText() != null && m.getText().startsWith(action))
-			        .findFirst()
-			        .orElseThrow()
-			        .fire();
-		});
+			final MenuItem menuItem = listCell.getContextMenu()
+			                                  .getItems()
+			                                  .stream()
+			                                  .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			                                  .findFirst()
+			                                  .orElseThrow();
+			fire(menuItem);
+		}, 5000);
 	}
 
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
-		waitUntil(() -> !treeView.lookupAll(".cell").isEmpty(), 5000);
-		interact(() -> {
+		waitUntil(() -> {
 			final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
 			final TreeCell<T> treeCell = treeView.lookupAll(".cell")
 			                                     .stream()
 			                                     .map(n -> (TreeCell<T>) n)
-			                                     .filter(cell -> selected.getValue().equals(cell.getItem()))
+			                                     .filter(c -> c.getContextMenu() != null
+			                                                  && c.getContextMenu().getItems().size() > 0)
+			                                     .filter(cell -> selected == null || selected.getValue()
+			                                                                                 .equals(cell.getItem()))
 			                                     .findFirst()
 			                                     .orElseThrow();
-			treeCell.getContextMenu()
-			        .getItems()
-			        .stream()
-			        .filter(m -> m.getText() != null && m.getText().startsWith(action))
-			        .findFirst()
-			        .orElseThrow()
-			        .fire();
-		});
+			final MenuItem menuItem = treeCell.getContextMenu()
+			                                  .getItems()
+			                                  .stream()
+			                                  .filter(m -> m.getText() != null && m.getText().startsWith(action))
+			                                  .findFirst()
+			                                  .orElseThrow();
+			fire(menuItem);
+		}, 5000);
+	}
+
+	private void fire(MenuItem menuItem) {
+		if (menuItem instanceof CheckMenuItem) {
+			// JavaFX doesn't automatically do this through fire()...
+			final CheckMenuItem checkMenuItem = (CheckMenuItem) menuItem;
+			checkMenuItem.setSelected(!checkMenuItem.isSelected());
+		}
+		menuItem.fire();
 	}
 
 	public <T> boolean select(ListView<T> listView, String name) {
@@ -106,6 +144,18 @@ public class FxRobotPlus extends FxRobot {
 		throw new IllegalStateException("Condition not reached - follow stack trace to see condition");
 	}
 
+	public void waitUntil(Runnable action, long timeoutMs) throws RuntimeException {
+		waitUntil(() -> {
+			try {
+				action.run();
+				return true;
+			}
+			catch (Exception e) {
+				return false;
+			}
+		}, timeoutMs);
+	}
+
 	public void waitForStageExists(String titleRegex) {
 		waitUntil(() -> fxRobot.listWindows()
 		                       .stream()
@@ -124,6 +174,17 @@ public class FxRobotPlus extends FxRobot {
 			sleep(10);
 		}
 		throw new IllegalStateException("No result found after " + timeoutMs + " ms");
+	}
+
+	public <T> void selectComboBox(ComboBox<T> comboBox, String text) {
+		waitUntil(() -> {
+			final T comboBoxItem = comboBox.getItems()
+					.stream()
+					.filter(item -> item.toString().contains(text))
+					.findFirst()
+					.orElseThrow();
+			comboBox.getSelectionModel().select(comboBoxItem);
+		}, 5000);
 	}
 
 }

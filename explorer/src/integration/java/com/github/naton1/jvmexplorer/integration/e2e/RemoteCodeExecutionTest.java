@@ -1,45 +1,61 @@
 package com.github.naton1.jvmexplorer.integration.e2e;
 
-import com.github.naton1.jvmexplorer.fx.classes.ClassTreeNode;
-import com.github.naton1.jvmexplorer.integration.helper.FxRobotPlus;
 import com.github.naton1.jvmexplorer.integration.helper.TestJvm;
 import com.github.naton1.jvmexplorer.integration.programs.SleepForeverProgram;
-import com.github.naton1.jvmexplorer.protocol.helper.ClassNameHelper;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputControl;
-import javafx.scene.control.TreeView;
 import lombok.extern.slf4j.Slf4j;
+import org.fxmisc.richtext.CodeArea;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.testfx.api.FxRobot;
-import org.testfx.util.WaitForAsyncUtils;
-
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 class RemoteCodeExecutionTest extends EndToEndTest {
 
 	@Test
-	void testExecuteRemoteCode(FxRobot fxRobot) throws Exception {
-		final FxRobotPlus fxRobotPlus = new FxRobotPlus(fxRobot);
+	void testExecuteRemoteCode() throws Exception {
+		testExecuteCode(null, null);
+	}
+
+	@Test
+	void testExecuteRemoteCodeWithFunction() throws Exception {
+		final String code = "if (true) return SleepForeverProgram.testFunction(\"test-input\");";
+		testExecuteCode(code, "test-input");
+	}
+
+	private void testExecuteCode(String inputCodeOverride, String expectedOutputOverride) throws Exception {
 		try (final TestJvm testJvm = TestJvm.of(SleepForeverProgram.class)) {
-			final ListView<?> listView = fxRobot.lookup("#processes").queryListView();
-			fxRobotPlus.waitUntil(() -> fxRobotPlus.select(listView, testJvm.getProcess().pid() + ""), 5000);
-			final TreeView<ClassTreeNode> treeView = fxRobotPlus.lookup("#classes").queryAs(TreeView.class);
-			final String simpleName = ClassNameHelper.getSimpleName(testJvm.getMainClassName());
-			fxRobotPlus.waitUntil(() -> fxRobotPlus.select(treeView, simpleName), 5000);
-			fxRobotPlus.selectContextMenu(treeView, "Run Code In Package");
-			fxRobotPlus.waitForStageExists("Remote Code Executor.*");
-			fxRobotPlus.targetWindow("Remote Code Executor.*").lookup("Execute Code").queryButton().fire();
+			appHelper.selectJvm(testJvm);
+			appHelper.selectMainClass(testJvm);
+			appHelper.selectClassAction("Run Code In Package");
 
-			final TextInputControl textArea = fxRobotPlus.targetWindow("Remote Code Executor.*")
-			                                             .lookup(TextArea.class::isInstance)
-			                                             .queryTextInputControl();
+			fxRobot.waitForStageExists("Remote Code Executor.*");
 
-			WaitForAsyncUtils.waitFor(5000, TimeUnit.MILLISECONDS, () -> textArea.getText().contains("Succeeded"));
+			if (inputCodeOverride != null) {
+				final CodeArea codeArea = fxRobot.targetWindow("Remote Code Executor.*")
+				                                 .lookup("#code")
+				                                 .queryAs(CodeArea.class);
+				final String updatedCode = codeArea.getText().replaceFirst("//.*", inputCodeOverride);
+				fxRobot.interact(() -> codeArea.replaceText(updatedCode));
+			}
 
-			Assertions.assertTrue(textArea.getText().contains("Hello world from " + testJvm.getProcess().pid()));
+			fxRobot.interact(() -> fxRobot.targetWindow("Remote Code Executor.*")
+			                              .lookup("Execute Code")
+			                              .queryButton()
+			                              .fire());
+
+			final TextInputControl textArea = fxRobot.targetWindow("Remote Code Executor.*")
+			                                         .lookup(TextArea.class::isInstance)
+			                                         .queryTextInputControl();
+
+			fxRobot.waitUntil(() -> textArea.getText().contains("Succeeded"), 5000);
+
+			if (expectedOutputOverride == null) {
+				expectedOutputOverride = "Hello world from " + testJvm.getProcess().pid();
+			}
+			Assertions.assertTrue(textArea.getText().contains(expectedOutputOverride), textArea.getText());
+
+			log.info("Output text: {}", textArea.getText());
 		}
 	}
 

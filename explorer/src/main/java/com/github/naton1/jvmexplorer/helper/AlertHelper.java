@@ -27,6 +27,22 @@ public class AlertHelper {
 		Tooltip.uninstall(alert.getDialogPane(), tooltip);
 	}
 
+	public void showError(String title, String headerText, Exception ex, List<String> list) {
+		final Alert alert = new Alert(Alert.AlertType.ERROR);
+		alert.setTitle(title);
+		alert.setHeaderText(headerText);
+		alert.setContentText(ex.getMessage());
+		final Tooltip tooltip = new Tooltip(ex.getMessage());
+		Tooltip.install(alert.getDialogPane(), tooltip);
+		final ListView<String> stringListView = new ListView<>();
+		stringListView.getItems().setAll(list);
+		stringListView.getItems().sort(Comparator.naturalOrder());
+		alert.getDialogPane().setExpandableContent(stringListView);
+		alert.initOwner(ownerStage);
+		alert.showAndWait();
+		Tooltip.uninstall(alert.getDialogPane(), tooltip);
+	}
+
 	public void showExpandableList(String title, String headerText, String contentText, List<String> list) {
 		final Alert alert = new Alert(Alert.AlertType.INFORMATION);
 		alert.setTitle(title);

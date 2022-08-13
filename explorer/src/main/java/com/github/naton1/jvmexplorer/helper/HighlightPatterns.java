@@ -48,6 +48,7 @@ class HighlightPatterns {
 	                                                        "long",
 	                                                        "native",
 	                                                        "new",
+	                                                        "null",
 	                                                        "package",
 	                                                        "private",
 	                                                        "protected",

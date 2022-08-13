@@ -43,6 +43,7 @@ public class RunningJvmsController {
 	private TitledPane jvmsTitlePane;
 
 	private ScheduledExecutorService executorService;
+	private AlertHelper alertHelper;
 
 	public RunningJvm getCurrentJvm() {
 		return currentJvm.get();
@@ -57,8 +58,12 @@ public class RunningJvmsController {
 	}
 
 	public void initialize(Stage stage, ScheduledExecutorService scheduledExecutorService) {
-		final AlertHelper alertHelper = new AlertHelper(stage);
+		this.alertHelper = new AlertHelper(stage);
 		this.executorService = scheduledExecutorService;
+		initialize();
+	}
+
+	private void initialize() {
 		processes.setPlaceholder(new Label("No JVMs found"));
 		bindSelectedItemToJvmProperty();
 		setupJvmSearching();
