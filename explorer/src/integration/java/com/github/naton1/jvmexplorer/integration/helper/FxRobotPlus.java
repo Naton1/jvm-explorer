@@ -70,12 +70,12 @@ public class FxRobotPlus extends FxRobot {
 	}
 
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
+		final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
 		log.debug("Selecting context menu item with {} in {} (selectedItem={})",
 		          action,
 		          treeView,
-		          treeView.getSelectionModel().getSelectedItem());
+		          selected);
 		waitUntil(() -> {
-			final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
 			final MenuItem menuItem = treeView.lookupAll(".cell")
 			                                  .stream()
 			                                  .map(n -> (TreeCell<T>) n)
