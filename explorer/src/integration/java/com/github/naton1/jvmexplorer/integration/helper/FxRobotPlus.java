@@ -32,24 +32,34 @@ public class FxRobotPlus extends FxRobot {
 	private final FxRobot fxRobot;
 
 	public void selectContextMenu(ContextMenu contextMenu, String action) {
+		log.debug("Selecting context menu item with {} in {}", action, contextMenu);
 		waitUntil(() -> {
-			final MenuItem menuItem = contextMenu.getItems()
-			                                     .stream()
-			                                     .filter(m -> m.getText() != null && m.getText().startsWith(action))
-			                                     .findFirst()
-			                                     .orElseThrow();
+			final MenuItem menuItem = getMenuItem(contextMenu, action);
 			fire(menuItem);
 		}, 5000);
 	}
 
 	public void selectContextMenu(Control control, String action) {
+		log.debug("Selecting context menu item with {} in {}", action, control);
 		waitUntil(() -> {
-			final MenuItem menuItem = control.getContextMenu()
-			                                 .getItems()
-			                                 .stream()
-			                                 .filter(m -> m.getText() != null && m.getText().startsWith(action))
-			                                 .findFirst()
-			                                 .orElseThrow();
+			final MenuItem menuItem = getMenuItem(control.getContextMenu(), action);
+			fire(menuItem);
+		}, 5000);
+	}
+
+	public <T> void selectContextMenu(ListView<T> listView, String action) {
+		final T selected = listView.getSelectionModel().getSelectedItem();
+		log.debug("Selecting context menu item with {} in {} (selectedItem={})", action, listView, selected);
+		waitUntil(() -> {
+			listView.scrollTo(selected);
+			final MenuItem menuItem = listView.lookupAll(".cell")
+			                                  .stream()
+			                                  .map(n -> (ListCell<T>) n)
+			                                  .filter(cell -> selected == null || selected.equals(cell.getItem()))
+			                                  .map(cell -> getMenuItem(cell.getContextMenu(), action))
+			                                  .filter(Objects::nonNull)
+			                                  .findFirst()
+			                                  .orElseThrow();
 			fire(menuItem);
 		}, 5000);
 	}
@@ -71,11 +81,10 @@ public class FxRobotPlus extends FxRobot {
 
 	public <T> void selectContextMenu(TreeView<T> treeView, String action) {
 		final TreeItem<T> selected = treeView.getSelectionModel().getSelectedItem();
-		log.debug("Selecting context menu item with {} in {} (selectedItem={})",
-		          action,
-		          treeView,
-		          selected);
+		log.debug("Selecting context menu item with {} in {} (selectedItem={})", action, treeView, selected);
 		waitUntil(() -> {
+			final int selectedIndex = treeView.getSelectionModel().getSelectedIndex();
+			treeView.scrollTo(selectedIndex);
 			final MenuItem menuItem = treeView.lookupAll(".cell")
 			                                  .stream()
 			                                  .map(n -> (TreeCell<T>) n)

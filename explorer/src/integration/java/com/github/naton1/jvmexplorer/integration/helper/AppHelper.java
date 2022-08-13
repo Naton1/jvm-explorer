@@ -37,8 +37,7 @@ public class AppHelper {
 
 	public void selectJvmAction(String action) {
 		final ListView<?> jvms = getJvmList();
-		final Object selectedItem = jvms.getSelectionModel().getSelectedItem();
-		fxRobot.selectContextMenu(jvms, item -> selectedItem == null || item == selectedItem, action);
+		fxRobot.selectContextMenu(jvms, action);
 	}
 
 	public TreeView<?> getClassTree() {
