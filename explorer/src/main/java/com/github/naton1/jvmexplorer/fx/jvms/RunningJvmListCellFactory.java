@@ -18,9 +18,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Callback;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +31,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RequiredArgsConstructor
 public class RunningJvmListCellFactory implements Callback<ListView<RunningJvm>, ListCell<RunningJvm>> {
 
@@ -123,7 +127,17 @@ public class RunningJvmListCellFactory implements Callback<ListView<RunningJvm>,
 			launchArgs.add("-jar");
 			launchArgs.add(selectedFile.getAbsolutePath());
 			try {
-				new ProcessBuilder().command(launchArgs).redirectErrorStream(true).inheritIO().start();
+				final Process process = new ProcessBuilder().command(launchArgs).redirectErrorStream(true).start();
+				// Create a new thread here, so we can log all output
+				new Thread(() -> {
+					try (final BufferedReader br =
+							     new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+						br.lines().forEach(line -> log.debug("Launched JVM: {}", line));
+					}
+					catch (IOException e) {
+						log.warn("Exception while reading output from launched process", e);
+					}
+				}).start();
 			}
 			catch (IOException ex) {
 				Platform.runLater(() -> {

@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.naton1"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -174,6 +174,9 @@ tasks {
         linux {
             linuxShortcut = true
         }
+        // We need a java.exe to launch subprocesses
+        // This is all the default params but without --strip-native-commands
+        additionalParameters = listOf("--jlink-options", "--strip-debug --no-man-pages --no-header-files")
     }
 }
 
