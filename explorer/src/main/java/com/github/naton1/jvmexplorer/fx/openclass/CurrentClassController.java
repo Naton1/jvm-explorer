@@ -386,6 +386,7 @@ public class CurrentClassController {
 
 		contextMenu.getItems().addAll(save, reset);
 
+		contextMenu.setStyle("-fx-font-family: \"Application Default\"");
 		editor.setContextMenu(contextMenu);
 	}
 
@@ -576,6 +577,7 @@ public class CurrentClassController {
 	// CodeArea must be in a VBox to replace and insert into VirtualizedScrollPane
 	private void setupCodeArea(CodeArea codeArea) {
 		final Label placeholderLabel = new Label();
+		placeholderLabel.setStyle("-fx-font-family: \"Application Default\"");
 		placeholderLabel.textProperty()
 		                .bind(Bindings.when(this.currentClass.isNotNull())
 		                              .then("Processing class")

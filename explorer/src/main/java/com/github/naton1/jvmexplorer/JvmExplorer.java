@@ -1,5 +1,6 @@
 package com.github.naton1.jvmexplorer;
 
+import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -23,6 +24,8 @@ public class JvmExplorer extends Application {
 		final Scene scene = new Scene(root);
 		scene.getStylesheets().addAll("css/style-override.css", "css/java-keywords.css");
 		primaryStage.setScene(scene);
+
+		Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
 		jvmExplorerController.initialize(primaryStage);
 

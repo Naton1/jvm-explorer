@@ -14,6 +14,7 @@ repositories {
     mavenCentral()
     maven("https://maven.quiltmc.org/repository/release/")
     maven("https://oss.sonatype.org/content/repositories/snapshots/")
+    maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
 }
 
 java {
@@ -55,6 +56,8 @@ dependencies {
     implementation("org.openjfx:javafx-controls:${javaFxVersion}:${javaFxPlatform}")
     implementation("org.openjfx:javafx-graphics:${javaFxVersion}:${javaFxPlatform}")
     implementation("org.openjfx:javafx-fxml:${javaFxVersion}:${javaFxPlatform}")
+
+    implementation("io.github.mkpaz:atlantafx-base:0.1.0-SNAPSHOT")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
     testImplementation("org.testfx:testfx-junit5:4.0.16-alpha")

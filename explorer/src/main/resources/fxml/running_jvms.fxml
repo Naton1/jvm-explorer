@@ -12,7 +12,7 @@
         <VBox prefHeight="200.0" prefWidth="100.0">
             <children>
                 <TextField fx:id="searchJvms" promptText="Search JVMs"/>
-                <ListView fx:id="processes" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS"/>
+                <ListView fx:id="processes" prefHeight="200.0" prefWidth="200.0" styleClass="dense" VBox.vgrow="ALWAYS"/>
             </children>
         </VBox>
     </content>

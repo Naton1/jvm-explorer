@@ -185,6 +185,7 @@ public class ModifyMethodController {
 
 		contextMenu.getItems().add(modifyCode);
 
+		contextMenu.setStyle("-fx-font-family: \"Application Default\"");
 		code.setContextMenu(contextMenu);
 	}
 

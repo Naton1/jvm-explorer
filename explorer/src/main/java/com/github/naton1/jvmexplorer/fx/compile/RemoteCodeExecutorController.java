@@ -84,6 +84,7 @@ public class RemoteCodeExecutorController {
 
 		contextMenu.getItems().add(run);
 
+		contextMenu.setStyle("-fx-font-family: \"Application Default\"");
 		code.setContextMenu(contextMenu);
 	}
 
